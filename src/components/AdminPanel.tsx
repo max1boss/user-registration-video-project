@@ -65,6 +65,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Admin API response data:', data);
+        console.log('Statistics from API:', data.statistics);
         const newUsers = data.users || [];
         setUsers(newUsers);
         setStats(data.statistics || { total_users: 0, total_leads: 0, total_audios: 0 });

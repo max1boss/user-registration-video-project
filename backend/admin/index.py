@@ -134,6 +134,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         cursor.execute("SELECT COUNT(*) FROM video_leads WHERE video_filename IS NOT NULL")
         total_audios = cursor.fetchone()[0]
         
+        # Debug logging
+        print(f"Debug: total_users={total_users}, total_leads={total_leads}, total_audios={total_audios}")
+        
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
