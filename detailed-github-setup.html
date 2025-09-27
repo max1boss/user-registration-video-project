@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 Подробная инструкция GitHub Actions - IMPERIA PROMO</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            background: white; 
+            border-radius: 20px; 
+            box-shadow: 0 25px 70px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header { 
+            background: linear-gradient(135deg, #28a745, #20c997); 
+            color: white; 
+            padding: 40px 30px; 
+            text-align: center; 
+            position: relative;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1.5" fill="rgba(255,255,255,0.1)"/></svg>');
+        }
+        .header-content { position: relative; z-index: 1; }
+        .logo { font-size: 72px; margin-bottom: 15px; }
+        .header h1 { font-size: 32px; font-weight: 700; margin-bottom: 10px; }
+        .header p { opacity: 0.95; font-size: 18px; }
+        
+        .content { padding: 40px 30px; }
+        
+        .toc {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .toc h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .toc ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .toc a {
+            color: #007bff;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .toc a:hover {
+            background: #e3f2fd;
+        }
+        
+        .method-card {
+            background: #fff;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            margin: 30px 0;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .method-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .method-header {
+            padding: 25px;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-bottom: 1px solid #2196f3;
+        }
+        .method-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0d47a1;
+            margin-bottom: 8px;
+        }
+        .method-subtitle {
+            color: #1565c0;
+            font-size: 16px;
+        }
+        .difficulty {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .difficulty.easy { background: #d4edda; color: #155724; }
+        .difficulty.medium { background: #fff3cd; color: #856404; }
+        
+        .method-content {
+            padding: 30px;
+        }
+        
+        .step-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+        }
+        .step-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0d47a1;
+            margin-bottom: 15px;
+        }
+        .step-list {
+            margin-left: 20px;
+        }
+        .step-list li {
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .step-list li::before {
+            content: '✓';
+            color: #28a745;
+            font-weight: bold;
+            position: absolute;
+            left: -20px;
+        }
+        
+        .screenshot-placeholder {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            color: #6c757d;
+        }
+        
+        .code-section {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 15px 0;
+            position: relative;
+            cursor: pointer;
+        }
+        .code-section::before {
+            content: 'Нажмите для копирования';
+            position: absolute;
+            top: 8px;
+            right: 15px;
+            background: #4a5568;
+            color: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            opacity: 0.7;
+        }
+        .code-section:hover::before {
+            opacity: 1;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .warning-box h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .success-box h4 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+        
+        .info-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .action-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 123, 255, 0.4);
+        }
+        .action-button.success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+        }
+        
+        .file-tree {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            margin: 15px 0;
+        }
+        
+        .troubleshooting {
+            background: #fff5f5;
+            border: 2px solid #fed7d7;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        .troubleshooting h3 {
+            color: #c53030;
+            margin-bottom: 15px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .container { margin: 10px; }
+            .header { padding: 30px 20px; }
+            .content { padding: 30px 20px; }
+            .method-content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <div class="logo">📚</div>
+                <h1>Подробная инструкция</h1>
+                <p>Пошаговое руководство по настройке GitHub Actions для Android APK</p>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="toc">
+                <h3>📋 Содержание</h3>
+                <ul>
+                    <li><a href="#method1">🎯 Метод 1: Через poehali.dev (Автоматически)</a></li>
+                    <li><a href="#method2">🔧 Метод 2: Ручное добавление в GitHub</a></li>
+                    <li><a href="#verification">✅ Проверка и запуск</a></li>
+                    <li><a href="#troubleshooting">🆘 Решение проблем</a></li>
+                </ul>
+            </div>
+
+            <!-- Метод 1: Автоматический -->
+            <div class="method-card" id="method1">
+                <div class="method-header">
+                    <div class="method-title">🎯 Метод 1: Через poehali.dev</div>
+                    <div class="method-subtitle">Автоматическая синхронизация с GitHub</div>
+                    <span class="difficulty easy">ЛЕГКО</span>
+                </div>
+                <div class="method-content">
+                    <div class="info-box">
+                        <strong>🚀 Преимущества:</strong> Все файлы добавляются автоматически, не нужно ничего копировать вручную.
+                    </div>
+
+                    <div class="step-section">
+                        <div class="step-title">📤 Вариант 1A: Если GitHub еще НЕ подключен</div>
+                        <ul class="step-list">
+                            <li>Откройте редактор poehali.dev с вашим проектом</li>
+                            <li>В правом верхнем углу нажмите кнопку <strong>"Скачать"</strong></li>
+                            <li>Выберите <strong>"Подключить GitHub"</strong></li>
+                            <li>Нажмите <strong>"Authorize"</strong> для входа в GitHub</li>
+                            <li>При запросе прав выберите <strong>"Все репозитории"</strong> или конкретные</li>
+                            <li>Выберите аккаунт/организацию для создания репозитория</li>
+                            <li>Дождитесь сообщения "Репозиторий создан"</li>
+                        </ul>
+                        
+                        <div class="screenshot-placeholder">
+                            📸 Скриншот: кнопка "Скачать" → "Подключить GitHub"
+                        </div>
+                        
+                        <div class="success-box">
+                            <h4>✅ Результат</h4>
+                            Все файлы проекта, включая GitHub Actions (.github/workflows/), автоматически попадут в новый репозиторий.
+                        </div>
+                    </div>
+
+                    <div class="step-section">
+                        <div class="step-title">🔄 Вариант 1B: Если GitHub уже подключен</div>
+                        <ul class="step-list">
+                            <li>Откройте редактор poehali.dev с вашим проектом</li>
+                            <li>Найдите кнопку <strong>"GitHub"</strong> в интерфейсе</li>
+                            <li>Нажмите <strong>"Push Changes"</strong> или <strong>"Синхронизировать"</strong></li>
+                            <li>Подтвердите отправку изменений</li>
+                            <li>Дождитесь завершения синхронизации</li>
+                        </ul>
+                        
+                        <div class="screenshot-placeholder">
+                            📸 Скриншот: кнопка "GitHub" → "Push Changes"
+                        </div>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Важно</h4>
+                        После синхронизации перейдите в свой GitHub репозиторий и убедитесь, что папка <code>.github/workflows/</code> появилась в корне проекта.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Метод 2: Ручной -->
+            <div class="method-card" id="method2">
+                <div class="method-header">
+                    <div class="method-title">🔧 Метод 2: Ручное добавление</div>
+                    <div class="method-subtitle">Копирование файлов напрямую в GitHub</div>
+                    <span class="difficulty medium">СРЕДНЕ</span>
+                </div>
+                <div class="method-content">
+                    <div class="info-box">
+                        <strong>🔧 Когда использовать:</strong> Если автоматическая синхронизация не работает или у вас уже есть отдельный GitHub репозиторий.
+                    </div>
+
+                    <div class="step-section">
+                        <div class="step-title">🗂️ Шаг 1: Создание структуры папок</div>
+                        <p>В корне вашего GitHub репозитория должна быть такая структура:</p>
+                        
+                        <div class="file-tree">📁 ваш-репозиторий/
+├── 📁 .github/
+│   └── 📁 workflows/
+│       ├── 📄 manual-build.yml
+│       └── 📄 build-android-apk.yml
+├── 📁 src/
+├── 📄 package.json
+└── 📄 README.md</div>
+
+                        <p><strong>Способы создания папок:</strong></p>
+                        <ul class="step-list">
+                            <li><strong>Через веб-интерфейс GitHub:</strong> Create new file → введите <code>.github/workflows/manual-build.yml</code></li>
+                            <li><strong>Через командную строку:</strong> <code>mkdir -p .github/workflows</code></li>
+                            <li><strong>Через файловый менеджер:</strong> создайте папки вручную</li>
+                        </ul>
+                    </div>
+
+                    <div class="step-section">
+                        <div class="step-title">📄 Шаг 2: Создание первого файла workflow</div>
+                        <p>Создайте файл <code>.github/workflows/manual-build.yml</code> со следующим содержимым:</p>
+                        
+                        <div class="code-section" onclick="copyToClipboard(this)">name: 🎯 Manual APK Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '📋 Версия приложения (например: 1.2.0)'
+        required: true
+        default: '1.0.0'
+        type: string
+      build_type:
+        description: '🔧 Тип сборки'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+        - release
+        - debug
+      create_release:
+        description: '🏷️ Создать GitHub Release?'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  manual-build:
+    name: 🚀 Manual Android Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: ☕ Setup Java 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: 🚀 Setup Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: 🤖 Setup Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        api-level: '34'
+        build-tools: '34.0.0'
+
+    - name: 📦 Install dependencies
+      run: |
+        npm ci
+        npm install -g @capacitor/cli
+
+    - name: 🏗️ Build React application
+      run: npm run build
+
+    - name: 📱 Setup Capacitor Android
+      run: |
+        if [ ! -d "android" ]; then
+          npx cap add android
+        fi
+        npx cap sync android
+
+    - name: 🔨 Build Android APK
+      run: |
+        cd android
+        chmod +x gradlew
+        if [ "${{ inputs.build_type }}" == "release" ]; then
+          ./gradlew assembleRelease --no-daemon
+        else
+          ./gradlew assembleDebug --no-daemon
+        fi
+
+    - name: 📂 Prepare APK file
+      id: prepare_apk
+      run: |
+        if [ "${{ inputs.build_type }}" == "release" ]; then
+          APK_PATH=$(find android -name "*release*.apk" -type f | head -1)
+        else
+          APK_PATH=$(find android -name "*debug*.apk" -type f | head -1)
+        fi
+        
+        FINAL_NAME="imperia-promo-v${{ inputs.version }}-${{ inputs.build_type }}.apk"
+        cp "$APK_PATH" "$FINAL_NAME"
+        echo "apk_path=$FINAL_NAME" >> $GITHUB_OUTPUT
+
+    - name: 📤 Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: IMPERIA-PROMO-v${{ inputs.version }}-${{ inputs.build_type }}
+        path: ${{ steps.prepare_apk.outputs.apk_path }}
+        retention-days: 90
+
+    - name: 🏷️ Create GitHub Release
+      if: inputs.create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ inputs.version }}
+        name: "IMPERIA PROMO v${{ inputs.version }}"
+        body: |
+          ## 📱 IMPERIA PROMO v${{ inputs.version }}
+          
+          ### 📥 Установка:
+          1. Скачайте APK файл ниже
+          2. Включите "Неизвестные источники" в Android
+          3. Установите APK файл
+          
+          ### 🚀 Возможности:
+          - 📹 HD/4K видеозапись
+          - 📤 Фоновая загрузка файлов  
+          - 💾 Офлайн сохранение
+        files: ${{ steps.prepare_apk.outputs.apk_path }}
+        draft: false
+        prerelease: ${{ inputs.build_type == 'debug' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}</div>
+                    </div>
+
+                    <div class="step-section">
+                        <div class="step-title">📄 Шаг 3: Создание второго файла workflow</div>
+                        <p>Создайте файл <code>.github/workflows/build-android-apk.yml</code>:</p>
+                        
+                        <div class="code-section" onclick="copyToClipboard(this)">name: 🚀 Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: 📱 Build Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: ☕ Setup Java JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: 🚀 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: 🤖 Setup Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        api-level: '34'
+        build-tools: '34.0.0'
+
+    - name: 📦 Install dependencies
+      run: |
+        npm ci
+        npm install -g @capacitor/cli
+
+    - name: 🏗️ Build React app
+      run: npm run build
+
+    - name: 🔧 Initialize Capacitor Android
+      run: |
+        if [ ! -d "android" ]; then
+          npx cap add android
+        fi
+        npx cap sync android
+
+    - name: 🔨 Build Android APK
+      run: |
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug --no-daemon --stacktrace
+
+    - name: 📂 Locate APK files
+      id: locate_apk
+      run: |
+        APK_PATH=$(find android -name "*.apk" -type f | head -1)
+        if [ -z "$APK_PATH" ]; then
+          echo "❌ No APK files found"
+          exit 1
+        fi
+        
+        APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
+        FINAL_NAME="imperia-promo-latest.apk"
+        cp "$APK_PATH" "$FINAL_NAME"
+        
+        echo "apk_path=$FINAL_NAME" >> $GITHUB_OUTPUT
+        echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
+
+    - name: 📤 Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: imperia-promo-latest
+        path: ${{ steps.locate_apk.outputs.apk_path }}
+        retention-days: 30</div>
+                    </div>
+
+                    <div class="step-section">
+                        <div class="step-title">💾 Шаг 4: Сохранение изменений</div>
+                        <p><strong>Через веб-интерфейс GitHub:</strong></p>
+                        <ul class="step-list">
+                            <li>Нажмите <strong>"Commit new file"</strong> после создания каждого файла</li>
+                            <li>Добавьте описание: "Add GitHub Actions for Android APK build"</li>
+                            <li>Выберите <strong>"Commit directly to main branch"</strong></li>
+                        </ul>
+
+                        <p><strong>Через командную строку:</strong></p>
+                        <div class="code-section" onclick="copyToClipboard(this)">git add .github/
+git commit -m "Add GitHub Actions for Android APK build"
+git push origin main</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Проверка и запуск -->
+            <div class="method-card" id="verification">
+                <div class="method-header">
+                    <div class="method-title">✅ Проверка и запуск</div>
+                    <div class="method-subtitle">Тестирование настроенных workflow</div>
+                </div>
+                <div class="method-content">
+                    <div class="step-section">
+                        <div class="step-title">🔍 Шаг 1: Проверка файлов</div>
+                        <ul class="step-list">
+                            <li>Откройте ваш GitHub репозиторий</li>
+                            <li>Убедитесь, что в корне есть папка <code>.github/workflows/</code></li>
+                            <li>Проверьте наличие файлов <code>manual-build.yml</code> и <code>build-android-apk.yml</code></li>
+                            <li>Откройте любой файл и убедитесь, что содержимое корректное</li>
+                        </ul>
+
+                        <div class="screenshot-placeholder">
+                            📸 Скриншот: структура файлов в GitHub репозитории
+                        </div>
+                    </div>
+
+                    <div class="step-section">
+                        <div class="step-title">🚀 Шаг 2: Первый запуск</div>
+                        <ul class="step-list">
+                            <li>Перейдите на вкладку <strong>"Actions"</strong> в репозитории</li>
+                            <li>Найдите workflow <strong>"🎯 Manual APK Build"</strong></li>
+                            <li>Нажмите на него, затем <strong>"Run workflow"</strong></li>
+                            <li>Заполните параметры:
+                                <ul style="margin-top: 10px; margin-left: 20px;">
+                                    <li>Версия: <code>1.0.0</code></li>
+                                    <li>Тип сборки: <code>release</code></li>
+                                    <li>Создать Release: <code>✅ да</code></li>
+                                </ul>
+                            </li>
+                            <li>Нажмите зеленую кнопку <strong>"Run workflow"</strong></li>
+                        </ul>
+
+                        <div class="screenshot-placeholder">
+                            📸 Скриншот: страница Actions с кнопкой "Run workflow"
+                        </div>
+                    </div>
+
+                    <div class="step-section">
+                        <div class="step-title">⏱️ Шаг 3: Ожидание результата</div>
+                        <ul class="step-list">
+                            <li>Процесс сборки займет <strong>10-15 минут</strong></li>
+                            <li>Следите за прогрессом в режиме реального времени</li>
+                            <li>Вы получите email уведомление о завершении</li>
+                            <li>При успешной сборке статус будет <span style="color: #28a745;">✅ Success</span></li>
+                        </ul>
+
+                        <div class="info-box">
+                            <strong>💡 Совет:</strong> Оставьте вкладку открытой, чтобы наблюдать за процессом. Каждый шаг будет отмечаться галочкой по мере выполнения.
+                        </div>
+                    </div>
+
+                    <div class="step-section">
+                        <div class="step-title">📥 Шаг 4: Получение APK</div>
+                        <p><strong>Способ 1 - Из GitHub Release (если создавали Release):</strong></p>
+                        <ul class="step-list">
+                            <li>Перейдите в раздел <strong>"Releases"</strong> репозитория</li>
+                            <li>Найдите версию <strong>"IMPERIA PROMO v1.0.0"</strong></li>
+                            <li>Скачайте файл <code>imperia-promo-v1.0.0-release.apk</code></li>
+                        </ul>
+
+                        <p><strong>Способ 2 - Из Artifacts:</strong></p>
+                        <ul class="step-list">
+                            <li>Вернитесь к завершенному workflow в Actions</li>
+                            <li>Прокрутите вниз до секции <strong>"Artifacts"</strong></li>
+                            <li>Скачайте ZIP архив с APK файлом</li>
+                            <li>Распакуйте ZIP и получите APK</li>
+                        </ul>
+
+                        <div class="success-box">
+                            <h4>🎉 Поздравляем!</h4>
+                            У вас есть готовый Android APK файл размером ~25-30 MB, который можно установить на любое Android устройство версии 7.0+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Решение проблем -->
+            <div class="troubleshooting" id="troubleshooting">
+                <h3>🆘 Решение проблем</h3>
+                
+                <div style="margin: 20px 0;">
+                    <h4 style="color: #c53030; margin-bottom: 10px;">❌ Workflow не появляется в Actions</h4>
+                    <p><strong>Причины:</strong></p>
+                    <ul>
+                        <li>Файлы не в правильной папке (должно быть <code>.github/workflows/</code>)</li>
+                        <li>Неправильное расширение файла (должно быть <code>.yml</code> или <code>.yaml</code>)</li>
+                        <li>YAML синтаксические ошибки</li>
+                    </ul>
+                    <p><strong>Решение:</strong> Проверьте структуру папок и синтаксис YAML</p>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <h4 style="color: #c53030; margin-bottom: 10px;">❌ Сборка падает с ошибкой</h4>
+                    <p><strong>Частые ошибки:</strong></p>
+                    <ul>
+                        <li><code>npm ci</code> fails → проверьте package.json</li>
+                        <li><code>npm run build</code> fails → убедитесь что сборка работает локально</li>
+                        <li>Android SDK errors → обычно решаются автоматически</li>
+                    </ul>
+                    <p><strong>Решение:</strong> Смотрите логи в failed job для точной ошибки</p>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <h4 style="color: #c53030; margin-bottom: 10px;">❌ APK создался, но не устанавливается</h4>
+                    <p><strong>Проверьте:</strong></p>
+                    <ul>
+                        <li>Включены ли "Неизвестные источники" в Android</li>
+                        <li>Не поврежден ли APK при скачивании</li>
+                        <li>Попробуйте debug версию вместо release</li>
+                    </ul>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <h4 style="color: #c53030; margin-bottom: 10px;">❓ Нужна дополнительная помощь</h4>
+                    <p>Если проблема не решается:</p>
+                    <ul>
+                        <li>Создайте Issue в репозитории с тегом "build-help"</li>
+                        <li>Приложите скриншоты ошибок из Actions</li>
+                        <li>Укажите какие параметры использовали для сборки</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 40px 0;">
+                <h3 style="margin-bottom: 20px; color: #495057;">🎯 Полезные ссылки</h3>
+                <a href="github-actions-setup.md" class="action-button">📚 Техническая документация</a>
+                <a href="github-apk-activation.html" class="action-button success">🚀 Страница активации</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>IMPERIA PROMO</strong> • GitHub Actions Setup Guide • Создано с помощью poehali.dev</p>
+            <p style="margin-top: 8px;">Подробное руководство по настройке автоматической сборки Android APK</p>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(element) {
+            const text = element.textContent.trim();
+            navigator.clipboard.writeText(text).then(() => {
+                const original = element.style.background;
+                element.style.background = '#2d5a2d';
+                
+                // Создаем временное уведомление
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #28a745;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    z-index: 1000;
+                    font-weight: 500;
+                `;
+                notification.textContent = '✅ Скопировано в буфер обмена';
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    element.style.background = original;
+                    document.body.removeChild(notification);
+                }, 2000);
+            }).catch(err => {
+                console.error('Ошибка копирования:', err);
+                alert('Не удалось скопировать. Выделите и скопируйте текст вручную.');
+            });
+        }
+
+        // Плавная прокрутка к якорям
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Анимация появления карточек
+        window.addEventListener('load', () => {
+            const cards = document.querySelectorAll('.method-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                card.style.transition = 'all 0.6s ease';
+                
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 300);
+            });
+        });
+
+        // Подсветка активного раздела в оглавлении
+        function highlightActiveSection() {
+            const sections = document.querySelectorAll('.method-card[id]');
+            const tocLinks = document.querySelectorAll('.toc a');
+            
+            let currentSection = '';
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= 100 && rect.bottom >= 100) {
+                    currentSection = section.id;
+                }
+            });
+            
+            tocLinks.forEach(link => {
+                if (link.getAttribute('href') === '#' + currentSection) {
+                    link.style.background = '#e3f2fd';
+                    link.style.fontWeight = 'bold';
+                } else {
+                    link.style.background = 'transparent';
+                    link.style.fontWeight = 'normal';
+                }
+            });
+        }
+
+        window.addEventListener('scroll', highlightActiveSection);
+        highlightActiveSection(); // Начальная проверка
+    </script>
+</body>
+</html>
