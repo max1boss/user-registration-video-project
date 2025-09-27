@@ -1,90 +1,81 @@
-name: 🎯 Manual APK Build (Simple)
+name: 🚀 Build Android APK
 
 on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
   workflow_dispatch:
-    inputs:
-      version:
-        description: '📋 Версия приложения'
-        required: true
-        default: '1.0.0'
-        type: string
 
 jobs:
-  manual-build:
-    name: 🚀 Manual Android Build
+  build-android:
+    name: 📱 Build Android APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
     
     steps:
-    - name: 📥 Checkout code
+    - name: 📥 Checkout repository
       uses: actions/checkout@v4
 
-    - name: ☕ Setup Java 17
+    - name: ☕ Setup Java JDK
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: 🚀 Setup Node.js 18
+    - name: 🚀 Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
+        cache: 'npm'
 
     - name: 🤖 Setup Android SDK
-      uses: android-actions/setup-android@v2
+      uses: android-actions/setup-android@v3
+      with:
+        api-level: '34'
+        build-tools: '34.0.0'
 
-    - name: 📝 Create minimal project structure
+    - name: 📦 Install dependencies
       run: |
-        # Создаем базовый package.json
-        cat > package.json << 'EOF'
-        {
-          "name": "user-registration-video",
-          "version": "1.0.0",
-          "scripts": {
-            "build": "mkdir -p dist && echo '<html><head><title>User Registration Video</title></head><body><h1>User Registration Video App v${{ inputs.version }}</h1><p>Добро пожаловать в приложение регистрации!</p></body></html>' > dist/index.html"
-          }
-        }
-        EOF
-        
-        # Создаем capacitor.config.json
-        cat > capacitor.config.json << 'EOF'
-        {
-          "appId": "com.userregistration.video",
-          "appName": "User Registration Video",
-          "webDir": "dist"
-        }
-        EOF
+        npm ci
+        npm install -g @capacitor/cli
 
-    - name: 📦 Install Capacitor only
-      run: |
-        npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-
-    - name: 🏗️ Build web app
+    - name: 🏗️ Build React app
       run: npm run build
 
-    - name: 📱 Add Android platform
-      run: npx cap add android
-
-    - name: 🔄 Sync Capacitor
-      run: npx cap sync android
+    - name: 🔧 Initialize Capacitor Android
+      run: |
+        if [ ! -d "android" ]; then
+          npx cap add android
+        fi
+        npx cap sync android
 
     - name: 🔨 Build Android APK
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon
+        ./gradlew assembleDebug --no-daemon --stacktrace
 
-    - name: 📂 Find and prepare APK
+    - name: 📂 Locate APK files
+      id: locate_apk
       run: |
-        APK_FILE=$(find android -name "*.apk" -type f | head -1)
-        FINAL_NAME="user-registration-video-v${{ inputs.version }}.apk"
-        cp "$APK_FILE" "$FINAL_NAME"
-        echo "APK_PATH=$FINAL_NAME" >> $GITHUB_ENV
-        ls -la "$FINAL_NAME"
+        APK_PATH=$(find android -name "*.apk" -type f | head -1)
+        if [ -z "$APK_PATH" ]; then
+          echo "❌ No APK files found"
+          exit 1
+        fi
+        
+        APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
+        FINAL_NAME="user-registration-video-latest.apk"
+        cp "$APK_PATH" "$FINAL_NAME"
+        
+        echo "apk_path=$FINAL_NAME" >> $GITHUB_OUTPUT
+        echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
 
-    - name: 📤 Upload APK
+    - name: 📤 Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
-        name: user-registration-video-v${{ inputs.version }}
-        path: ${{ env.APK_PATH }}
+        name: user-registration-video-latest
+        path: ${{ steps.locate_apk.outputs.apk_path }}
         retention-days: 30
