@@ -4,6 +4,8 @@ import { useToast } from '@/hooks/use-toast';
 import AdminStatsCards from './admin/AdminStatsCards';
 import UsersList from './admin/UsersList';
 import UserDetails from './admin/UserDetails';
+import ServiceAccountModal from './admin/ServiceAccountModal';
+import { GoogleSheetsExporter, getServiceAccountKey, saveServiceAccountKey } from '@/utils/googleSheetsExport';
 
 interface Lead {
   id: string;
@@ -47,12 +49,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [exportingToSheets, setExportingToSheets] = useState(false);
+  const [showServiceAccountModal, setShowServiceAccountModal] = useState(false);
+  const [serviceAccountKey, setServiceAccountKey] = useState<any>(null);
   
   const { toast } = useToast();
 
   useEffect(() => {
     loadAdminData();
+    loadServiceAccountKey();
   }, []);
+
+  const loadServiceAccountKey = async () => {
+    const key = await getServiceAccountKey();
+    setServiceAccountKey(key);
+  };
 
   const loadAdminData = async () => {
     try {
@@ -378,46 +388,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
   };
 
   const exportToGoogleSheets = async () => {
+    if (!serviceAccountKey) {
+      setShowServiceAccountModal(true);
+      return;
+    }
+
     setExportingToSheets(true);
     
     try {
-      // Используем admin API для экспорта
-      const exportApiUrl = adminApiUrl;
+      const exporter = new GoogleSheetsExporter(serviceAccountKey);
+      const result = await exporter.exportUsersToSheets(users);
       
-      const response = await fetch(exportApiUrl, {
-        method: 'POST',
-        headers: {
-          'X-Auth-Token': token,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+      if (result.success) {
         toast({
           title: '✅ Экспорт завершен',
-          description: `Данные ${data.exported_count} лидов экспортированы в Google Таблицы`,
+          description: `Данные ${result.exportedCount} лидов экспортированы в Google Таблицы`,
         });
       } else {
-        const errorData = await response.json();
-        
-        // Проверяем на отсутствие Google Sheets credentials
-        if (errorData.setup_required || (errorData.error && errorData.error.includes('Google Sheets credentials not configured'))) {
-          toast({
-            title: '⚠️ Требуется настройка Google Sheets',
-            description: errorData.details || 'Добавьте секрет GOOGLE_SHEETS_SERVICE_ACCOUNT в настройках проекта',
-            variant: 'destructive'
-          });
-        } else {
-          throw new Error(errorData.error || 'Ошибка экспорта');
-        }
+        throw new Error(result.error || 'Ошибка экспорта');
       }
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Google Sheets credentials not configured')) {
-        // Уже обработано выше
-        return;
-      }
-      
       toast({
         title: 'Ошибка экспорта',
         description: `Не удалось экспортировать данные: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
@@ -425,6 +415,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
       });
     } finally {
       setExportingToSheets(false);
+    }
+  };
+
+  const handleServiceAccountSubmit = (keyText: string) => {
+    try {
+      const key = JSON.parse(keyText);
+      saveServiceAccountKey(key);
+      setServiceAccountKey(key);
+      setShowServiceAccountModal(false);
+      
+      toast({
+        title: '✅ Ключ сохранен',
+        description: 'Google Service Account ключ успешно сохранен',
+      });
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Неверный формат JSON ключа',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -456,6 +466,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         stats={stats} 
         onExportToSheets={exportToGoogleSheets}
         exportingToSheets={exportingToSheets}
+        hasServiceAccount={!!serviceAccountKey}
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -484,6 +495,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
           formatDate={formatDate}
         />
       </div>
+
+      <ServiceAccountModal
+        isOpen={showServiceAccountModal}
+        onClose={() => setShowServiceAccountModal(false)}
+        onSubmit={handleServiceAccountSubmit}
+      />
     </div>
   );
 };

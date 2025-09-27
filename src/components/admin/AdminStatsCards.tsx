@@ -12,19 +12,28 @@ interface AdminStatsCardsProps {
   stats: AdminStats;
   onExportToSheets?: () => void;
   exportingToSheets?: boolean;
+  hasServiceAccount?: boolean;
 }
 
-const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ stats, onExportToSheets, exportingToSheets }) => {
+const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ stats, onExportToSheets, exportingToSheets, hasServiceAccount }) => {
   return (
     <div className="space-y-4 mb-8">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Статистика</h2>
         {onExportToSheets && (
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-lg">
-              <Icon name="AlertTriangle" size={14} />
-              <span>Настройте GOOGLE_SHEETS_SERVICE_ACCOUNT</span>
-            </div>
+            {!hasServiceAccount && (
+              <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-lg">
+                <Icon name="AlertTriangle" size={14} />
+                <span>Требуется настройка Google Sheets</span>
+              </div>
+            )}
+            {hasServiceAccount && (
+              <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-lg">
+                <Icon name="CheckCircle" size={14} />
+                <span>Google Sheets настроен</span>
+              </div>
+            )}
             <button
               onClick={onExportToSheets}
               disabled={exportingToSheets}
@@ -38,7 +47,7 @@ const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ stats, onExportToShee
               ) : (
                 <>
                   <Icon name="FileSpreadsheet" size={16} />
-                  Экспорт в Google Таблицы
+                  {hasServiceAccount ? 'Экспорт в Google Таблицы' : 'Настроить экспорт'}
                 </>
               )}
             </button>
