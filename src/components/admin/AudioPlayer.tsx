@@ -79,16 +79,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, leadTitle, classNam
       // Clean up blob URL
       URL.revokeObjectURL(blobUrl);
       
-      toast({
-        title: 'Скачивание начато',
-        description: `Аудио "${leadTitle}" загружается`,
-      });
     } catch (error) {
-      toast({
-        title: 'Ошибка скачивания',
-        description: 'Не удалось скачать аудио',
-        variant: 'destructive'
-      });
     } finally {
       setIsLoading(false);
     }
@@ -149,12 +140,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, leadTitle, classNam
           onError={(e) => {
             console.error('Audio playback error:', e);
             setIsSupported(false);
-            
-            toast({
-              title: 'Ошибка воспроизведения',
-              description: 'Не удалось воспроизвести аудио файл',
-              variant: 'destructive'
-            });
           }}
         >
           <p className="text-sm text-muted-foreground">

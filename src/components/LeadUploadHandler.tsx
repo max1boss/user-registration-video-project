@@ -156,22 +156,12 @@ export const useLeadUploadHandler = ({
           // Reload leads
           await onLoadLeads(token);
         } else {
-          toast({ 
-            title: 'Ошибка сохранения', 
-            description: data.error || 'Не удалось сохранить лид', 
-            variant: 'destructive' 
-          });
           throw new Error(data.error || 'Не удалось сохранить лид');
         }
       };
       
       reader.onerror = (error) => {
         console.error('FileReader error:', error);
-        toast({ 
-          title: 'Ошибка чтения файла', 
-          description: 'Не удалось прочитать аудио файл', 
-          variant: 'destructive' 
-        });
         throw new Error('FileReader error');
       };
       

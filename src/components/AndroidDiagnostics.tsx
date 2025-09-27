@@ -148,23 +148,7 @@ const AndroidDiagnostics: React.FC<AndroidDiagnosticsProps> = ({ onClose }) => {
     const errorCount = newResults.filter(r => r.status === 'error').length;
     const warningCount = newResults.filter(r => r.status === 'warning').length;
     
-    if (errorCount > 0) {
-      toast({
-        title: 'Обнаружены проблемы',
-        description: `${errorCount} критических ошибок, ${warningCount} предупреждений`,
-        variant: 'destructive'
-      });
-    } else if (warningCount > 0) {
-      toast({
-        title: 'Android Chrome особенности',
-        description: `${warningCount} предупреждений - это нормально для Android`,
-      });
-    } else {
-      toast({
-        title: 'Все тесты пройдены',
-        description: 'Устройство полностью совместимо',
-      });
-    }
+
   };
 
   useEffect(() => {

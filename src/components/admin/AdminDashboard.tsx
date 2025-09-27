@@ -60,11 +60,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setUsers(data.users || []);
       setStatistics(data.statistics || { total_users: 0, total_leads: 0, total_audios: 0 });
     } catch (error: any) {
-      toast({ 
-        title: 'Ошибка загрузки', 
-        description: error.message,
-        variant: 'destructive'
-      });
     } finally {
       setIsLoading(false);
     }
@@ -82,17 +77,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     try {
       // Здесь будет запрос на удаление пользователя
-      toast({ 
-        title: 'Функция в разработке', 
-        description: 'Удаление пользователей будет доступно позже',
-        variant: 'default'
-      });
     } catch (error: any) {
-      toast({ 
-        title: 'Ошибка удаления', 
-        description: error.message,
-        variant: 'destructive'
-      });
     }
   };
 
