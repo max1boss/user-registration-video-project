@@ -3,6 +3,127 @@ import os
 import jwt
 import psycopg2
 from typing import Dict, Any, Optional
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+
+def handle_google_sheets_export(cursor) -> Dict[str, Any]:
+    '''Handle Google Sheets export functionality'''
+    try:
+        # Get Google Sheets credentials
+        service_account_json = os.environ.get('GOOGLE_SHEETS_SERVICE_ACCOUNT')
+        if not service_account_json:
+            return {
+                'statusCode': 400,
+                'headers': {'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({
+                    'error': 'Google Sheets credentials not configured',
+                    'details': 'Добавьте секрет GOOGLE_SHEETS_SERVICE_ACCOUNT в настройках проекта',
+                    'setup_required': True
+                })
+            }
+        
+        credentials_info = json.loads(service_account_json)
+        credentials = Credentials.from_service_account_info(
+            credentials_info,
+            scopes=['https://www.googleapis.com/auth/spreadsheets']
+        )
+        
+        # Build Google Sheets service
+        service = build('sheets', 'v4', credentials=credentials)
+        
+        # Google Sheets ID from the provided URL
+        spreadsheet_id = '13qDlzyvsrX2qInjp8EJ8wGSNshUkhb_D_ePNg12R1gQ'
+        
+        # Get leads with user information
+        cursor.execute("""
+            SELECT 
+                l.title as parent_name,
+                l.comments as child_info,
+                '' as child_age,
+                '' as phone,
+                u.name as username
+            FROM video_leads l
+            JOIN users u ON l.user_id = u.id
+            ORDER BY l.created_at DESC
+        """)
+        
+        leads_data = cursor.fetchall()
+        
+        if not leads_data:
+            return {
+                'statusCode': 200,
+                'headers': {'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'message': 'No leads data to export', 'exported_count': 0})
+            }
+        
+        # Full export: rewrite entire table
+        values = [['Имя родителя', 'Информация о ребенке', 'Возраст ребенка', 'Телефон', 'Имя пользователя']]
+        
+        # Add leads data
+        for lead in leads_data:
+            parent_name, child_info, child_age, phone, username = lead
+            values.append([
+                parent_name or '',
+                child_info or '',
+                str(child_age) if child_age else '',
+                phone or '',
+                username or ''
+            ])
+        
+        # Clear existing data and write new data
+        service.spreadsheets().values().clear(
+            spreadsheetId=spreadsheet_id,
+            range='A:E'
+        ).execute()
+        
+        # Write new data
+        body = {'values': values}
+        
+        result = service.spreadsheets().values().update(
+            spreadsheetId=spreadsheet_id,
+            range='A1:E' + str(len(values)),
+            valueInputOption='RAW',
+            body=body
+        ).execute()
+        
+        updated_cells = result.get('updatedCells', 0)
+        
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'message': 'Data exported successfully to Google Sheets',
+                'exported_count': len(leads_data),
+                'updated_cells': updated_cells,
+                'spreadsheet_id': spreadsheet_id
+            })
+        }
+        
+    except HttpError as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({
+                'error': f'Google Sheets API error: {str(e)}',
+                'details': 'Check if the service account has access to the spreadsheet'
+            })
+        }
+    except json.JSONDecodeError as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Invalid Google Sheets credentials format: {str(e)}'})
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Export error: {str(e)}'})
+        }
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
@@ -18,7 +139,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, X-Auth-Token',
                 'Access-Control-Max-Age': '86400'
             },
@@ -26,7 +147,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': ''
         }
     
-    if method != 'GET':
+    if method not in ['GET', 'POST']:
         return {
             'statusCode': 405,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
@@ -74,6 +195,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         conn = psycopg2.connect(db_url)
         cursor = conn.cursor()
         
+        # Handle POST request for Google Sheets export
+        if method == 'POST':
+            return handle_google_sheets_export(cursor)
+        
+        # Handle GET request for admin data
         # Get all users with their leads
         cursor.execute("""
             SELECT 

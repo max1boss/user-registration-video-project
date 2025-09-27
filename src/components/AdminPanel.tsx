@@ -381,8 +381,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
     setExportingToSheets(true);
     
     try {
-      // Временно используем заглушку URL пока функция не задеплоена
-      const exportApiUrl = 'https://functions.poehali.dev/google-sheets-export-placeholder';
+      // Используем admin API для экспорта
+      const exportApiUrl = adminApiUrl;
       
       const response = await fetch(exportApiUrl, {
         method: 'POST',

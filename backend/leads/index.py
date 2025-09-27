@@ -19,8 +19,8 @@ def verify_token(token: str) -> Optional[Dict[str, Any]]:
 def trigger_google_sheets_export() -> None:
     '''Trigger Google Sheets export function asynchronously'''
     try:
-        # После деплоя функции, этот URL будет обновлен автоматически
-        export_url = 'https://functions.poehali.dev/google-sheets-export-placeholder?auto=true'
+        # Используем admin API для экспорта (после обновления функции)
+        export_url = 'https://functions.poehali.dev/bf64fc6c-c075-4df6-beb9-f5b527586fa1'
         
         # Делаем асинхронный запрос без ожидания ответа
         requests.post(export_url, 
