@@ -4,7 +4,6 @@ import { useToast } from '@/hooks/use-toast';
 import AdminStatsCards from './admin/AdminStatsCards';
 import UsersList from './admin/UsersList';
 import UserDetails from './admin/UserDetails';
-import UsersRanking from './admin/UsersRanking';
 import { downloadCSV } from '@/utils/csvExport';
 
 interface Lead {
@@ -48,7 +47,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
   const [deletingLeadId, setDeletingLeadId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const [showUsersRanking, setShowUsersRanking] = useState(false);
   
   const { toast } = useToast();
 
@@ -443,54 +441,43 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
       </header>
 
       <div className="container mx-auto px-4 py-6 max-w-7xl">
-        {showUsersRanking ? (
-          <UsersRanking 
-            users={users}
-            onBack={() => setShowUsersRanking(false)}
-            formatDate={formatDate}
-          />
-        ) : (
-          <>
-            <AdminStatsCards 
-              stats={stats} 
-              onExportToCSV={handleCSVExport}
-              onUsersCardClick={() => setShowUsersRanking(true)}
+        <AdminStatsCards 
+          stats={stats} 
+          onExportToCSV={handleCSVExport}
+        />
+        
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+          <div className="xl:col-span-1">
+            <UsersList
+              users={users}
+              selectedUser={selectedUser}
+              onSelectUser={setSelectedUser}
+              onDownloadAllUserAudios={downloadAllUserAudios}
+              onDeleteUser={deleteUser}
+              onEditUser={editUser}
+              deletingUserId={deletingUserId}
+              editingUserId={editingUserId}
+              formatDate={formatDate}
             />
-            
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-              <div className="xl:col-span-1">
-                <UsersList
-                  users={users}
-                  selectedUser={selectedUser}
-                  onSelectUser={setSelectedUser}
-                  onDownloadAllUserAudios={downloadAllUserAudios}
-                  onDeleteUser={deleteUser}
-                  onEditUser={editUser}
-                  deletingUserId={deletingUserId}
-                  editingUserId={editingUserId}
-                  formatDate={formatDate}
-                />
-              </div>
-              
-              <div className="xl:col-span-2">
-                <UserDetails
-                  selectedUser={selectedUser}
-                  audioUrl={audioUrl}
-                  loadingAudio={loadingAudio}
-                  deletingLeadId={deletingLeadId}
-                  onLoadAudio={loadAudio}
-                  onDownloadAudio={downloadAudio}
-                  onDeleteLead={deleteLead}
-                  onDownloadAllUserAudios={downloadAllUserAudios}
-                  onCloseAudio={closeAudio}
-                  formatDate={formatDate}
-                  videoApiUrl={videoApiUrl}
-                  token={token}
-                />
-              </div>
-            </div>
-          </>
-        )}
+          </div>
+          
+          <div className="xl:col-span-2">
+            <UserDetails
+              selectedUser={selectedUser}
+              audioUrl={audioUrl}
+              loadingAudio={loadingAudio}
+              deletingLeadId={deletingLeadId}
+              onLoadAudio={loadAudio}
+              onDownloadAudio={downloadAudio}
+              onDeleteLead={deleteLead}
+              onDownloadAllUserAudios={downloadAllUserAudios}
+              onCloseAudio={closeAudio}
+              formatDate={formatDate}
+              videoApiUrl={videoApiUrl}
+              token={token}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
