@@ -69,9 +69,11 @@ const Index = () => {
 
       const data = await response.json();
       
-      // Простая функция создания CSV (как альтернатива Excel)
+      // Создаём CSV с правильной кодировкой UTF-8
       const csvContent = createCSVContent(data.users || []);
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      // Добавляем BOM для правильного отображения в Excel
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
       
       // Создаём ссылку для скачивания
       const link = document.createElement('a');
@@ -85,7 +87,7 @@ const Index = () => {
       
       toast({ 
         title: 'Экспорт завершён', 
-        description: 'CSV файл скачан успешно!',
+        description: 'CSV файл скачан с правильной кодировкой UTF-8!',
         variant: 'default'
       });
       
@@ -102,20 +104,20 @@ const Index = () => {
 
   const createCSVContent = (users: any[]) => {
     const headers = ['ID', 'Имя', 'Email', 'Роль', 'Дата создания'];
-    const csvRows = [headers.join(',')];
+    const csvRows = [headers.join(';')]; // Используем ; как разделитель для русских версий Excel
     
     users.forEach(user => {
       const row = [
         user.id || '',
-        `"${user.name || ''}"`,
+        `"${(user.name || '').replace(/"/g, '""')}"`, // Экранируем кавычки
         user.email || '',
         user.role || 'пользователь',
         user.created_at || ''
       ];
-      csvRows.push(row.join(','));
+      csvRows.push(row.join(';'));
     });
     
-    return csvRows.join('\n');
+    return csvRows.join('\r\n'); // Используем Windows line endings для лучшей совместимости
   };
 
   if (!user) {
