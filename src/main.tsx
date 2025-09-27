@@ -3,5 +3,5 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './index.css'
 
-// Cache cleared: fixed duplicate Index declaration - v2
+// Cache cleared: simplified Index component - v3
 createRoot(document.getElementById("root")!).render(<App />);
