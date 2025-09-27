@@ -23,10 +23,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     Args: event with httpMethod, headers (X-Auth-Token), body with chunk data
     Returns: Upload status, next chunk info, or final upload completion
     '''
+    print(f"Chunked upload handler called with method: {event.get('httpMethod', 'UNKNOWN')}")
     method: str = event.get('httpMethod', 'GET')
-    print(f"Chunked upload handler called with method: {method}")
-    print(f"Event headers: {event.get('headers', {})}")
-    print(f"Event body length: {len(event.get('body', ''))}")
     
     # Handle CORS OPTIONS request
     if method == 'OPTIONS':
@@ -80,23 +78,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         cursor = conn.cursor()
         
         if method == 'POST':
-            body_str = event.get('body', '{}')
-            print(f"POST body received: {body_str[:200]}...")
-            
-            try:
-                body_data = json.loads(body_str)
-                print(f"Body data keys: {list(body_data.keys())}")
-            except json.JSONDecodeError as e:
-                print(f"JSON decode error: {str(e)}")
-                return {
-                    'statusCode': 400,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'isBase64Encoded': False,
-                    'body': json.dumps({'error': f'Invalid JSON: {str(e)}'})
-                }
-            
+            body_data = json.loads(event.get('body', '{}'))
             action = body_data.get('action', 'upload_chunk')
-            print(f"Action: {action}")
             
             if action == 'start_upload':
                 # Initialize new chunked upload
@@ -155,8 +138,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'body': json.dumps({'error': 'Missing chunk data'})
                     }
                 
-                print(f"Looking for upload session: upload_id={upload_id}, user_id={user_id}")
-                
                 # Verify upload session exists
                 cursor.execute("""
                     SELECT total_chunks, status FROM chunked_uploads 
@@ -164,20 +145,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 """, (upload_id, user_id))
                 
                 upload_info = cursor.fetchone()
-                print(f"Upload session found: {upload_info}")
-                
                 if not upload_info:
-                    print(f"No upload session found for upload_id={upload_id}, user_id={user_id}")
-                    # Check if session exists for any user (debug)
-                    cursor.execute("SELECT upload_id, user_id, status FROM chunked_uploads WHERE upload_id = %s", (upload_id,))
-                    debug_info = cursor.fetchone()
-                    print(f"Debug - session exists for different user: {debug_info}")
-                    
                     return {
                         'statusCode': 404,
                         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                         'isBase64Encoded': False,
-                        'body': json.dumps({'error': f'Upload session not found for upload_id={upload_id}, user_id={user_id}'})
+                        'body': json.dumps({'error': 'Upload session not found'})
                     }
                 
                 total_chunks, status = upload_info
@@ -191,27 +164,22 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 
                 # Decode and verify chunk
                 try:
-                    print(f"Decoding chunk {chunk_index}, data length: {len(chunk_data)}")
                     chunk_bytes = base64.b64decode(chunk_data)
-                    print(f"Decoded chunk size: {len(chunk_bytes)} bytes")
-                    
                     if chunk_hash:
                         actual_hash = hashlib.md5(chunk_bytes).hexdigest()
-                        print(f"Hash verification: expected={chunk_hash}, actual={actual_hash}")
                         if actual_hash != chunk_hash:
                             return {
                                 'statusCode': 400,
                                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                                 'isBase64Encoded': False,
-                                'body': json.dumps({'error': f'Chunk verification failed: expected {chunk_hash}, got {actual_hash}'})
+                                'body': json.dumps({'error': 'Chunk verification failed'})
                             }
                 except Exception as e:
-                    print(f"Chunk decode error: {str(e)}")
                     return {
                         'statusCode': 400,
                         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                         'isBase64Encoded': False,
-                        'body': json.dumps({'error': f'Invalid chunk data: {str(e)}'})
+                        'body': json.dumps({'error': 'Invalid chunk data'})
                     }
                 
                 # Store chunk
@@ -255,11 +223,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
         print(f"Upload error: {str(e)}")
-        print(f"Full traceback: {error_details}")
-        
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},

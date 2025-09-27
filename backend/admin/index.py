@@ -3,23 +3,6 @@ import os
 import jwt
 import psycopg2
 from typing import Dict, Any, Optional
-from datetime import datetime
-import pytz
-
-def format_moscow_time(dt: datetime) -> str:
-    '''Convert UTC datetime to Moscow timezone and format'''
-    if not dt:
-        return ''
-    
-    # If datetime is timezone-naive, assume it's UTC
-    if dt.tzinfo is None:
-        dt = pytz.UTC.localize(dt)
-    
-    # Convert to Moscow timezone
-    moscow_tz = pytz.timezone('Europe/Moscow')
-    moscow_time = dt.astimezone(moscow_tz)
-    
-    return moscow_time.strftime('%d.%m.%Y %H:%M')
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
@@ -122,7 +105,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'id': user_id,
                     'name': user_name,
                     'email': user_email,
-                    'created_at': format_moscow_time(user_created_at),
+                    'created_at': user_created_at.isoformat() if user_created_at else None,
                     'leads': []
                 }
             
@@ -132,7 +115,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'id': lead_id,
                     'title': lead_title,
                     'comments': lead_comments,
-                    'created_at': format_moscow_time(lead_created_at),
+                    'created_at': lead_created_at.isoformat() if lead_created_at else None,
                     'video_filename': video_filename,
                     'has_video': bool(video_filename)
                 }

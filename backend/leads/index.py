@@ -5,22 +5,6 @@ import psycopg2
 import base64
 from datetime import datetime
 from typing import Dict, Any, Optional
-import pytz
-
-def format_moscow_time(dt: datetime) -> str:
-    '''Convert UTC datetime to Moscow timezone and format'''
-    if not dt:
-        return ''
-    
-    # If datetime is timezone-naive, assume it's UTC
-    if dt.tzinfo is None:
-        dt = pytz.UTC.localize(dt)
-    
-    # Convert to Moscow timezone
-    moscow_tz = pytz.timezone('Europe/Moscow')
-    moscow_time = dt.astimezone(moscow_tz)
-    
-    return moscow_time.strftime('%d.%m.%Y %H:%M')
 
 def verify_token(token: str) -> Optional[Dict[str, Any]]:
     '''Verify JWT token and return user data'''
@@ -92,56 +76,26 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         cursor = conn.cursor()
         
         if method == 'GET':
-            # Get user's leads (admins see all leads)
-            user_role = user_data.get('role', 'user')
-            
-            if user_role == 'admin':
-                # Admin sees all leads from all users with user info
-                cursor.execute("""
-                    SELECT vl.id, vl.title, vl.comments, vl.video_filename, vl.video_content_type, vl.created_at,
-                           u.name as user_name, u.email as user_email, vl.user_id
-                    FROM video_leads vl
-                    LEFT JOIN users u ON vl.user_id = u.id
-                    ORDER BY vl.created_at DESC
-                """)
-            else:
-                # Regular user sees only their own leads
-                cursor.execute("""
-                    SELECT id, title, comments, video_filename, video_content_type, created_at 
-                    FROM video_leads 
-                    WHERE user_id = %s 
-                    ORDER BY created_at DESC
-                """, (user_id,))
+            # Get user's leads
+            cursor.execute("""
+                SELECT id, title, comments, video_filename, video_content_type, created_at 
+                FROM video_leads 
+                WHERE user_id = %s 
+                ORDER BY created_at DESC
+            """, (user_id,))
             
             leads = []
             for row in cursor.fetchall():
-                if user_role == 'admin':
-                    # Admin format with user info
-                    lead_id, title, comments, filename, content_type, created_at, user_name, user_email, user_id_val = row
-                    leads.append({
-                        'id': lead_id,
-                        'title': title,
-                        'comments': comments,
-                        'video_filename': filename,
-                        'video_content_type': content_type,
-                        'created_at': format_moscow_time(created_at),
-                        'video_url': f'/backend/leads/video/{lead_id}',  # URL to get video data
-                        'user_name': user_name,
-                        'user_email': user_email,
-                        'user_id': user_id_val
-                    })
-                else:
-                    # Regular user format
-                    lead_id, title, comments, filename, content_type, created_at = row
-                    leads.append({
-                        'id': lead_id,
-                        'title': title,
-                        'comments': comments,
-                        'video_filename': filename,
-                        'video_content_type': content_type,
-                        'created_at': format_moscow_time(created_at),
-                        'video_url': f'/backend/leads/video/{lead_id}'  # URL to get video data
-                    })
+                lead_id, title, comments, filename, content_type, created_at = row
+                leads.append({
+                    'id': lead_id,
+                    'title': title,
+                    'comments': comments,
+                    'video_filename': filename,
+                    'video_content_type': content_type,
+                    'created_at': created_at.strftime('%d.%m.%Y %H:%M') if created_at else '',
+                    'video_url': f'/backend/leads/video/{lead_id}'  # URL to get video data
+                })
             
             return {
                 'statusCode': 200,
@@ -153,17 +107,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         elif method == 'POST':
             # Create new lead
             print(f"POST request received, body length: {len(event.get('body', ''))}")
-            
-            # Admins cannot create leads directly (they don't have valid user_id)
-            user_role = user_data.get('role', 'user')
-            if user_role == 'admin':
-                return {
-                    'statusCode': 403,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'isBase64Encoded': False,
-                    'body': json.dumps({'error': 'Admins cannot create leads directly'})
-                }
-            
             body_data = json.loads(event.get('body', '{}'))
             print(f"Parsed body data keys: {list(body_data.keys())}")
             title = body_data.get('title', '').strip()
@@ -172,52 +115,23 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             video_filename = body_data.get('video_filename', 'recording.mp4')
             video_content_type = body_data.get('video_content_type', 'video/mp4')
             
-            # Allow video-only uploads (for new video recorder)
-            if not video_base64:
+            if not title or not comments or not video_base64:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                     'isBase64Encoded': False,
-                    'body': json.dumps({'error': 'Video data required'})
+                    'body': json.dumps({'error': 'Missing required fields'})
                 }
-            
-            # Set defaults for video-only uploads
-            if not title:
-                title = 'Видео заявка'
-            if not comments:
-                comments = f'Видео файл: {video_filename}'
             
             # Decode base64 video data
             try:
                 video_data = base64.b64decode(video_base64)
-                video_size_mb = len(video_data) / (1024 * 1024)
-                print(f"Video data size: {video_size_mb:.2f} MB")
-                
-                # Check file size limit (200MB)
-                if video_size_mb > 200:
-                    return {
-                        'statusCode': 413,
-                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                        'isBase64Encoded': False,
-                        'body': json.dumps({'error': f'Video file too large: {video_size_mb:.1f}MB. Maximum allowed: 200MB'})
-                    }
-                
             except Exception as e:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                     'isBase64Encoded': False,
                     'body': json.dumps({'error': 'Invalid video data'})
-                }
-            
-            # Verify user exists before inserting
-            cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
-            if not cursor.fetchone():
-                return {
-                    'statusCode': 400,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'isBase64Encoded': False,
-                    'body': json.dumps({'error': f'User ID {user_id} does not exist'})
                 }
             
             # Save to database
@@ -238,9 +152,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({
                     'success': True,
                     'lead_id': lead_id,
-                    'created_at': format_moscow_time(created_at),
-                    'video_size_mb': round(video_size_mb, 2),
-                    'message': f'Видео успешно загружено ({video_size_mb:.1f}MB)'
+                    'created_at': created_at.strftime('%d.%m.%Y %H:%M')
                 })
             }
         
@@ -302,34 +214,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
     
     except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"Error occurred: {str(e)}")
-        print(f"Full traceback: {error_details}")
-        
-        # More specific error handling
-        error_msg = str(e)
-        if 'foreign key' in error_msg.lower():
-            return {
-                'statusCode': 400,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'isBase64Encoded': False,
-                'body': json.dumps({'error': f'Database foreign key error: User does not exist (user_id: {user_id})'})
-            }
-        elif 'duplicate key' in error_msg.lower():
-            return {
-                'statusCode': 409,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'isBase64Encoded': False,
-                'body': json.dumps({'error': 'Duplicate entry detected'})
-            }
-        else:
-            return {
-                'statusCode': 500,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'isBase64Encoded': False,
-                'body': json.dumps({'error': f'Server error: {error_msg}'})
-            }
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'isBase64Encoded': False,
+            'body': json.dumps({'error': f'Server error: {str(e)}'})
+        }
     
     finally:
         if 'cursor' in locals():

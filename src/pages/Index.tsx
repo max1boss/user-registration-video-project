@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { LeadFormData, VideoLead } from '@/types/lead';
 
 // Components
 import AuthForm from '@/components/AuthForm';
@@ -18,9 +17,7 @@ const API_URLS = {
   video: 'https://functions.poehali.dev/75e3022c-965a-4cd9-b5c1-bd179806e509',
   admin: 'https://functions.poehali.dev/bf64fc6c-c075-4df6-beb9-f5b527586fa1',
   adminVideo: 'https://functions.poehali.dev/72f44b46-a11c-4ea3-addb-cb69aee5546e',
-  chunkedUpload: 'https://functions.poehali.dev/00f46d6e-5445-4f13-8032-e95041773736',
-  deleteUser: 'https://functions.poehali.dev/d99ce676-54d7-46f7-8738-a2dd9264061e',
-  editUser: 'https://functions.poehali.dev/d99ce676-54d7-46f7-8738-a2dd9264061e'
+  chunkedUpload: 'https://functions.poehali.dev/00f46d6e-5445-4f13-8032-e95041773736'
 };
 
 interface User {
@@ -30,7 +27,14 @@ interface User {
   role?: string;
 }
 
-
+interface VideoLead {
+  id: string;
+  title: string;
+  comments: string;
+  video_url?: string;
+  created_at: string;
+  video_filename?: string;
+}
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -39,6 +43,14 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('record');
   const [loading, setLoading] = useState(false);
   const [externalUploadProgress, setExternalUploadProgress] = useState<number | undefined>(undefined);
+  const [uploadData, setUploadData] = useState<{
+    progress: number;
+    uploadedMB: number;
+    totalMB: number;
+    uploadType: 'standard' | 'chunked';
+  } | null>(null);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [comments, setComments] = useState('');
   const [archivePassword, setArchivePassword] = useState('');
   const [showUploadPage, setShowUploadPage] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
@@ -105,31 +117,17 @@ const Index = () => {
       chunkedUpload: API_URLS.chunkedUpload
     },
     onProgress: setExternalUploadProgress,
+    onUploadData: setUploadData,
     onLoadLeads: loadUserLeads
   });
 
-  const handleSaveLead = async (videoBlob: Blob, leadData: LeadFormData) => {
+  const handleSaveLead = async (videoBlob: Blob, comments: string) => {
+    // Store video data and show upload page
+    setVideoBlob(videoBlob);
+    setComments(comments);
     setShowUploadPage(true);
     setUploadComplete(false);
-    setLoading(true);
-    
-    try {
-      await uploadLead(videoBlob, leadData);
-      
-      // Show success
-      setUploadComplete(true);
-      setLoading(false);
-      
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      toast({ 
-        title: 'Ошибка', 
-        description: error.message || 'Не удалось сохранить лид', 
-        variant: 'destructive' 
-      });
-      setLoading(false);
-      setShowUploadPage(false);
-    }
+    setLoading(false);
   };
 
   const loadVideoForLead = async (leadId: string): Promise<string | null> => {
@@ -171,6 +169,9 @@ const Index = () => {
     setShowUploadPage(false);
     setUploadComplete(false);
     setExternalUploadProgress(undefined);
+    setUploadData(null);
+    setVideoBlob(null);
+    setComments('');
     setActiveTab('record');
   };
 
@@ -218,8 +219,6 @@ const Index = () => {
           token={token}
           adminApiUrl={API_URLS.admin}
           videoApiUrl={API_URLS.adminVideo}
-          deleteUserApiUrl={API_URLS.deleteUser}
-          editUserApiUrl={API_URLS.editUser}
         />
       </div>
     );
@@ -229,9 +228,14 @@ const Index = () => {
   if (showUploadPage) {
     return (
       <UploadPage
-        progress={externalUploadProgress ?? 0}
-        isComplete={uploadComplete}
         onNewLead={handleNewLead}
+        onSaveLead={uploadLead}
+        videoBlob={videoBlob}
+        comments={comments}
+        uploadedMB={uploadData?.uploadedMB ?? 0}
+        totalMB={uploadData?.totalMB ?? 0}
+        uploadType={uploadData?.uploadType ?? 'standard'}
+        progress={uploadData?.progress ?? externalUploadProgress ?? 0}
       />
     );
   }
