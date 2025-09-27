@@ -1,5 +1,5 @@
 import React from 'react';
-import { useToast } from '@/hooks/use-toast';
+
 import { ChunkedUploader } from '@/utils/chunkedUpload';
 import { LeadFormData } from '@/types/lead';
 
@@ -19,7 +19,7 @@ export const useLeadUploadHandler = ({
   onProgress, 
   onLoadLeads 
 }: LeadUploadHandlerProps) => {
-  const { toast } = useToast();
+
 
   const handleChunkedUpload = async (audioBlob: Blob, leadData: LeadFormData): Promise<void> => {
     const comments = `Родитель: ${leadData.parentName}, Ребенок: ${leadData.childName}, Возраст: ${leadData.age}, Телефон: ${leadData.phone}`;
@@ -109,12 +109,7 @@ export const useLeadUploadHandler = ({
         
         // Warn if approaching limits (audio files are typically much smaller)
         if (audioSizeMB > 8) {
-          console.warn('Audio size approaching Cloud Function limits!');
-          toast({ 
-            title: '⚠️ Большой размер аудио', 
-            description: `Размер: ${audioSizeMB.toFixed(1)}MB. Это может вызвать проблемы с загрузкой.`, 
-            variant: 'destructive' 
-          });
+          console.warn('Audio size approaching Cloud Function limits:', audioSizeMB.toFixed(1), 'MB');
         }
         
         const requestBody = {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
-import { useToast } from '@/hooks/use-toast';
+
 import AdminStatsCards from './admin/AdminStatsCards';
 import UsersList from './admin/UsersList';
 import UserDetails from './admin/UserDetails';
@@ -51,7 +51,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [showUsersRanking, setShowUsersRanking] = useState(false);
   
-  const { toast } = useToast();
+
 
   useEffect(() => {
     loadAdminData();
@@ -380,14 +380,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
   const handleCSVExport = () => {
     try {
       downloadCSV(users);
-
-      });
     } catch (error) {
-      toast({
-        title: 'Ошибка экспорта',
-        description: 'Не удалось создать CSV файл',
-        variant: 'destructive'
-      });
+      console.error('CSV export error:', error);
     }
   };
 

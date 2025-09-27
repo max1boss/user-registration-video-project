@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
-import { useToast } from '@/hooks/use-toast';
+
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -12,7 +12,7 @@ interface AudioPlayerProps {
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, leadTitle, className = '' }) => {
   const [isSupported, setIsSupported] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+
 
   // Detect mobile device and browser
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -43,10 +43,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, leadTitle, classNam
       setIsSupported(true);
     } else {
       setIsSupported(false);
-      toast({
-        title: '⚠️ Формат не поддерживается',
-        description: 'Браузер не может воспроизвести аудио. Попробуйте скачать файл.',
-        variant: 'destructive'
+      console.warn('Audio format not supported')
       });
     }
   };

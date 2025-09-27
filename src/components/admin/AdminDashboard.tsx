@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
+
 import StatisticsCards from '../StatisticsCards';
 import UsersList from '../UsersList';
 import EditUserModal from './EditUserModal';
@@ -37,7 +37,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [showUserDetail, setShowUserDetail] = useState(false);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
-  const { toast } = useToast();
+
 
   const loadUsers = async () => {
     if (!token) return;
