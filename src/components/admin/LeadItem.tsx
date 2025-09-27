@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
+import AudioPlayer from '../ui/AudioPlayer';
 
 interface Lead {
   id: string;
@@ -93,59 +94,58 @@ const LeadItem: React.FC<LeadItemProps> = ({
     setIsDialogOpen(false);
   };
   return (
-    <div className="p-3 sm:p-4 border rounded-lg">
-      <div className="flex justify-between items-start mb-3 gap-2">
-        <p className="font-medium text-sm flex-1 min-w-0">{lead.title}</p>
-        <Badge variant={hasAudio ? 'default' : 'secondary'} className="flex-shrink-0">
-          <Icon name={hasAudio ? 'Volume2' : 'FileText'} size={12} className="mr-1" />
-          {hasAudio ? 'Аудио' : 'Текст'}
-        </Badge>
-      </div>
-      <div className="text-sm text-muted-foreground mb-3">
-        <LeadInfo comments={lead.comments} />
-      </div>
+    <div className={`relative p-4 border border-gray-200 rounded-xl transition-all duration-200 hover:shadow-lg ${
+      showPlayer ? 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200' : 'bg-white hover:bg-gray-50'
+    }`}>
+      {showPlayer && (
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl blur opacity-10"></div>
+      )}
+      <div className="relative">
+        <div className="flex justify-between items-start mb-3 gap-3">
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-gray-900 truncate text-sm">{lead.title}</h4>
+            <p className="text-xs text-gray-500 mt-1">
+              <Icon name="Calendar" size={12} className="inline mr-1" />
+              {formatDate(lead.created_at)}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Badge 
+              variant={hasAudio ? 'default' : 'secondary'} 
+              className={hasAudio 
+                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0' 
+                : 'bg-gray-100 text-gray-600 border-0'
+              }
+            >
+              <Icon name={hasAudio ? 'Volume2' : 'FileText'} size={12} className="mr-1" />
+              {hasAudio ? 'Аудио' : 'Текст'}
+            </Badge>
+          </div>
+        </div>
+        
+        <div className="text-sm text-gray-600 mb-4">
+          <LeadInfo comments={lead.comments} />
+        </div>
 
       {/* Встроенный аудиоплеер */}
       {hasAudio && showPlayer && audioUrl && (
-        <div className="mb-3 p-3 bg-muted/30 rounded-lg border">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Icon name="Volume2" size={16} className="text-primary" />
-              <span className="text-sm font-medium">Аудиозапись</span>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setShowPlayer(false);
-                if (audioUrl && audioUrl.startsWith('blob:')) {
-                  URL.revokeObjectURL(audioUrl);
-                }
-                setAudioUrl(null);
-              }}
-              className="w-6 h-6 p-0"
-            >
-              <Icon name="X" size={12} />
-            </Button>
-          </div>
-          <audio 
+        <div className="mb-4">
+          <AudioPlayer 
             src={audioUrl} 
-            controls 
-            preload="metadata"
-            className="w-full"
-            style={{ height: '32px' }}
-          >
-            Ваш браузер не поддерживает аудио.
-          </audio>
+            title={`Аудио: ${lead.title}`}
+            onClose={() => {
+              setShowPlayer(false);
+              if (audioUrl && audioUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(audioUrl);
+              }
+              setAudioUrl(null);
+            }}
+            className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200"
+          />
         </div>
       )}
-      
-      {/* Mobile: Stack date and buttons vertically */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-        <p className="text-xs text-muted-foreground order-2 sm:order-1">
-          {formatDate(lead.created_at)}
-        </p>
-        <div className="flex flex-wrap gap-2 order-1 sm:order-2">
+        
+        <div className="flex flex-wrap gap-2 justify-end">
           {hasAudio && (
             <>
               <Button
@@ -163,25 +163,33 @@ const LeadItem: React.FC<LeadItemProps> = ({
                   }
                 }}
                 disabled={loadingAudioUrl}
-                className="w-9 h-9 p-0 touch-manipulation"
+                className={`h-9 px-3 transition-all duration-200 ${
+                  showPlayer 
+                    ? 'bg-purple-100 hover:bg-purple-200 border-purple-300 text-purple-700' 
+                    : 'bg-white hover:bg-gray-50 border-gray-200'
+                }`}
                 title={showPlayer ? "Скрыть плеер" : "Показать плеер"}
               >
                 {loadingAudioUrl ? (
-                  <Icon name="Loader2" size={14} className="animate-spin" />
+                  <Icon name="Loader2" size={14} className="animate-spin mr-2" />
                 ) : showPlayer ? (
-                  <Icon name="VolumeX" size={14} />
+                  <Icon name="VolumeX" size={14} className="mr-2" />
                 ) : (
-                  <Icon name="Volume2" size={14} />
+                  <Icon name="Play" size={14} className="mr-2" />
                 )}
+                <span className="text-xs font-medium">
+                  {loadingAudioUrl ? 'Загрузка...' : showPlayer ? 'Скрыть' : 'Слушать'}
+                </span>
               </Button>
               <Button
                 size="sm"
-                variant="secondary"
+                variant="outline"
                 onClick={() => onDownloadAudio(lead.id, lead.title, userName)}
-                className="w-9 h-9 p-0 touch-manipulation"
+                className="h-9 px-3 bg-white hover:bg-gray-50 border-gray-200"
                 title="Скачать аудио"
               >
-                <Icon name="Download" size={14} />
+                <Icon name="Download" size={14} className="mr-2" />
+                <span className="text-xs font-medium">Скачать</span>
               </Button>
             </>
           )}
@@ -189,16 +197,19 @@ const LeadItem: React.FC<LeadItemProps> = ({
             <DialogTrigger asChild>
               <Button
                 size="sm"
-                variant="destructive"
+                variant="outline"
                 disabled={deletingLeadId === lead.id}
-                className="w-9 h-9 p-0 touch-manipulation"
+                className="h-9 px-3 bg-red-50 hover:bg-red-100 border-red-200 text-red-600"
                 title="Удалить лид"
               >
                 {deletingLeadId === lead.id ? (
-                  <Icon name="Loader2" size={14} className="animate-spin" />
+                  <Icon name="Loader2" size={14} className="animate-spin mr-2" />
                 ) : (
-                  <Icon name="Trash2" size={14} />
+                  <Icon name="Trash2" size={14} className="mr-2" />
                 )}
+                <span className="text-xs font-medium">
+                  {deletingLeadId === lead.id ? 'Удаление...' : 'Удалить'}
+                </span>
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md mx-3 rounded-lg">
