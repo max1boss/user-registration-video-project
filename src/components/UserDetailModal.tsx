@@ -118,11 +118,15 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                         )}
 
                         {/* Аудиозаписи */}
-                        {lead.audios && lead.audios.length > 0 && (
+                        {(
+                          (lead.audios && lead.audios.length > 0) ||
+                          (lead.audio_files && lead.audio_files.length > 0) ||
+                          (lead.recordings && lead.recordings.length > 0)
+                        ) && (
                           <div>
                             <h5 className="font-medium text-gray-700 mb-2">Аудиозаписи:</h5>
                             <div className="space-y-2">
-                              {lead.audios.map((audio: any, audioIndex: number) => (
+                              {(lead.audios || lead.audio_files || lead.recordings || []).map((audio: any, audioIndex: number) => (
                                 <div key={audio.id || audioIndex} className="border border-gray-100 rounded-lg p-3">
                                   <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm text-gray-600">
@@ -139,7 +143,7 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                                       </span>
                                     )}
                                   </div>
-                                  {audio.file_url ? (
+                                  {(audio.file_url || audio.url || audio.audio_url) ? (
                                     <div className="flex items-center gap-2">
                                       <audio 
                                         controls 
@@ -147,9 +151,9 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                                         onPlay={() => onAudioPlay(audio.id)}
                                         onPause={onAudioPause}
                                       >
-                                        <source src={audio.file_url} type="audio/mpeg" />
-                                        <source src={audio.file_url} type="audio/wav" />
-                                        <source src={audio.file_url} type="audio/ogg" />
+                                        <source src={audio.file_url || audio.url || audio.audio_url} type="audio/mpeg" />
+                                        <source src={audio.file_url || audio.url || audio.audio_url} type="audio/wav" />
+                                        <source src={audio.file_url || audio.url || audio.audio_url} type="audio/ogg" />
                                         Ваш браузер не поддерживает аудио элемент.
                                       </audio>
                                     </div>
@@ -164,7 +168,11 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                           </div>
                         )}
 
-                        {(!lead.audios || lead.audios.length === 0) && (
+                        {(
+                          (!lead.audios || lead.audios.length === 0) &&
+                          (!lead.audio_files || lead.audio_files.length === 0) &&
+                          (!lead.recordings || lead.recordings.length === 0)
+                        ) && (
                           <div className="text-gray-500 text-sm italic">
                             Нет аудиозаписей
                           </div>
