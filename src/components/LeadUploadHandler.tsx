@@ -3,6 +3,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ChunkedUploader } from '@/utils/chunkedUpload';
 import { LeadFormData } from '@/types/lead';
 
+// Updated: removed Google Sheets integration
+
 interface LeadUploadHandlerProps {
   token: string;
   apiUrls: {

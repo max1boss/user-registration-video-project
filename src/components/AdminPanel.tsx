@@ -7,6 +7,8 @@ import { useAdminData } from '@/hooks/useAdminData';
 import { useAdminActions } from '@/hooks/useAdminActions';
 import { useExcelExport } from '@/hooks/useExcelExport';
 
+// Updated: replaced Google Sheets with Excel export
+
 interface AdminPanelProps {
   token: string;
   adminApiUrl: string;
