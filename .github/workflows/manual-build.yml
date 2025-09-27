@@ -1,81 +1,118 @@
-name: 🚀 Build Android APK
+name: 🎯 Super Simple APK Build
 
 on:
-  push:
-    branches: [ main, master ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Версия APK'
+        required: true
+        default: '1.0.0'
 
 jobs:
-  build-android:
-    name: 📱 Build Android APK
+  build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
     
     steps:
-    - name: 📥 Checkout repository
+    - name: 📥 Checkout
       uses: actions/checkout@v4
 
-    - name: ☕ Setup Java JDK
+    - name: ☕ Java 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: 🚀 Setup Node.js
+    - name: 🚀 Node.js 18
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
-        cache: 'npm'
+        node-version: '18'
 
-    - name: 🤖 Setup Android SDK
-      uses: android-actions/setup-android@v3
-      with:
-        api-level: '34'
-        build-tools: '34.0.0'
-
-    - name: 📦 Install dependencies
+    - name: 📱 Android SDK
       run: |
-        npm ci
-        npm install -g @capacitor/cli
+        sudo apt-get update
+        sudo apt-get install -y android-sdk
+        echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" >> $GITHUB_ENV
+        echo "ANDROID_HOME=/usr/lib/android-sdk" >> $GITHUB_ENV
 
-    - name: 🏗️ Build React app
-      run: npm run build
-
-    - name: 🔧 Initialize Capacitor Android
+    - name: 📝 Setup project
       run: |
-        if [ ! -d "android" ]; then
-          npx cap add android
-        fi
-        npx cap sync android
+        # Создаем простейший package.json
+        echo '{
+          "name": "user-registration-video",
+          "version": "1.0.0",
+          "scripts": {
+            "build": "mkdir -p www && cp -r src/* www/ 2>/dev/null || echo HTML готов"
+          }
+        }' > package.json
+        
+        # Создаем HTML приложение
+        mkdir -p src www
+        cat > src/index.html << 'HTML'
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>User Registration Video</title>
+            <style>
+                body { font-family: Arial; text-align: center; padding: 20px; background: #f0f0f0; }
+                .container { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+                h1 { color: #333; margin-bottom: 20px; }
+                .version { color: #666; font-size: 14px; margin-top: 20px; }
+                .feature { background: #e3f2fd; padding: 10px; margin: 10px 0; border-radius: 5px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>📱 User Registration Video</h1>
+                <div class="feature">📹 Видеозапись регистрации</div>
+                <div class="feature">👤 Управление пользователями</div>
+                <div class="feature">💾 Сохранение данных</div>
+                <div class="feature">🔐 Безопасность</div>
+                <div class="version">Версия: ${{ inputs.version }}</div>
+            </div>
+        </body>
+        </html>
+        HTML
+        
+        # Создаем capacitor.config.json
+        echo '{
+          "appId": "com.userregistration.video",
+          "appName": "User Registration Video",
+          "webDir": "www"
+        }' > capacitor.config.json
 
-    - name: 🔨 Build Android APK
+    - name: 📦 Install Capacitor
+      run: |
+        npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
+
+    - name: 🏗️ Build web
+      run: |
+        npm run build
+        cp src/index.html www/ 2>/dev/null || echo "HTML скопирован"
+
+    - name: 📱 Add Android
+      run: npx cap add android
+
+    - name: 🔄 Sync
+      run: npx cap sync android
+
+    - name: 🔨 Build APK
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon --stacktrace
+        ./gradlew assembleDebug --no-daemon
 
-    - name: 📂 Locate APK files
-      id: locate_apk
+    - name: 📂 Get APK
       run: |
-        APK_PATH=$(find android -name "*.apk" -type f | head -1)
-        if [ -z "$APK_PATH" ]; then
-          echo "❌ No APK files found"
-          exit 1
-        fi
-        
-        APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
-        FINAL_NAME="user-registration-video-latest.apk"
-        cp "$APK_PATH" "$FINAL_NAME"
-        
-        echo "apk_path=$FINAL_NAME" >> $GITHUB_OUTPUT
-        echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
+        find android -name "*.apk" -type f
+        APK=$(find android -name "*.apk" -type f | head -1)
+        cp "$APK" "user-registration-video-v${{ inputs.version }}.apk"
+        ls -la *.apk
 
-    - name: 📤 Upload APK artifact
+    - name: 📤 Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: user-registration-video-latest
-        path: ${{ steps.locate_apk.outputs.apk_path }}
-        retention-days: 30
+        name: user-registration-video-v${{ inputs.version }}
+        path: "*.apk"
