@@ -425,30 +425,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              {showUsersRanking && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowUsersRanking(false)}
-                  className="bg-white/70 backdrop-blur-sm border-gray-200 hover:bg-white/90"
-                >
-                  <Icon name="ArrowLeft" size={16} className="mr-2" />
-                  Назад к статистике
-                </Button>
-              )}
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
                 <Icon name="Shield" size={20} className="text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  {showUsersRanking ? 'Рейтинг пользователей' : 'Админ панель'}
-                </h1>
-                <p className="text-sm text-gray-500">
-                  {showUsersRanking 
-                    ? 'Топ пользователей по количеству созданных лидов'
-                    : 'Управление пользователями и лидами'
-                  }
-                </p>
+                <h1 className="text-xl font-bold text-gray-900">Админ панель</h1>
+                <p className="text-sm text-gray-500">Управление пользователями и лидами</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
