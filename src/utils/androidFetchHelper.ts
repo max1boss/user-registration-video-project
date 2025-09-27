@@ -149,8 +149,8 @@ export class AndroidFetchHelper {
       maxRetries: isAndroidChrome ? 5 : 3,
       retryDelay: isAndroidChrome ? 1000 : 2000,
       timeout: isAndroidChrome ? 
-        (videoSizeMB > 1 ? 900000 : 180000) : // 15min/>1MB, 3min/smaller on Android
-        (videoSizeMB > 2 ? 600000 : 120000)   // 10min/>2MB, 2min/smaller on others
+        Math.max(300000, Math.min(1800000, videoSizeMB * 90000)) : // 5min minimum, 1.5min per MB, max 30min on Android
+        Math.max(180000, Math.min(1200000, videoSizeMB * 60000))   // 3min minimum, 1min per MB, max 20min on others
     });
   }
 

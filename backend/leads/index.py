@@ -92,26 +92,56 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         cursor = conn.cursor()
         
         if method == 'GET':
-            # Get user's leads
-            cursor.execute("""
-                SELECT id, title, comments, video_filename, video_content_type, created_at 
-                FROM video_leads 
-                WHERE user_id = %s 
-                ORDER BY created_at DESC
-            """, (user_id,))
+            # Get user's leads (admins see all leads)
+            user_role = user_data.get('role', 'user')
+            
+            if user_role == 'admin':
+                # Admin sees all leads from all users with user info
+                cursor.execute("""
+                    SELECT vl.id, vl.title, vl.comments, vl.video_filename, vl.video_content_type, vl.created_at,
+                           u.name as user_name, u.email as user_email, vl.user_id
+                    FROM video_leads vl
+                    LEFT JOIN users u ON vl.user_id = u.id
+                    ORDER BY vl.created_at DESC
+                """)
+            else:
+                # Regular user sees only their own leads
+                cursor.execute("""
+                    SELECT id, title, comments, video_filename, video_content_type, created_at 
+                    FROM video_leads 
+                    WHERE user_id = %s 
+                    ORDER BY created_at DESC
+                """, (user_id,))
             
             leads = []
             for row in cursor.fetchall():
-                lead_id, title, comments, filename, content_type, created_at = row
-                leads.append({
-                    'id': lead_id,
-                    'title': title,
-                    'comments': comments,
-                    'video_filename': filename,
-                    'video_content_type': content_type,
-                    'created_at': format_moscow_time(created_at),
-                    'video_url': f'/backend/leads/video/{lead_id}'  # URL to get video data
-                })
+                if user_role == 'admin':
+                    # Admin format with user info
+                    lead_id, title, comments, filename, content_type, created_at, user_name, user_email, user_id_val = row
+                    leads.append({
+                        'id': lead_id,
+                        'title': title,
+                        'comments': comments,
+                        'video_filename': filename,
+                        'video_content_type': content_type,
+                        'created_at': format_moscow_time(created_at),
+                        'video_url': f'/backend/leads/video/{lead_id}',  # URL to get video data
+                        'user_name': user_name,
+                        'user_email': user_email,
+                        'user_id': user_id_val
+                    })
+                else:
+                    # Regular user format
+                    lead_id, title, comments, filename, content_type, created_at = row
+                    leads.append({
+                        'id': lead_id,
+                        'title': title,
+                        'comments': comments,
+                        'video_filename': filename,
+                        'video_content_type': content_type,
+                        'created_at': format_moscow_time(created_at),
+                        'video_url': f'/backend/leads/video/{lead_id}'  # URL to get video data
+                    })
             
             return {
                 'statusCode': 200,
@@ -123,6 +153,17 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         elif method == 'POST':
             # Create new lead
             print(f"POST request received, body length: {len(event.get('body', ''))}")
+            
+            # Admins cannot create leads directly (they don't have valid user_id)
+            user_role = user_data.get('role', 'user')
+            if user_role == 'admin':
+                return {
+                    'statusCode': 403,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Admins cannot create leads directly'})
+                }
+            
             body_data = json.loads(event.get('body', '{}'))
             print(f"Parsed body data keys: {list(body_data.keys())}")
             title = body_data.get('title', '').strip()
