@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
 import { LeadFormData } from '@/types/lead';
+import AndroidDiagnostics from './AndroidDiagnostics';
 
 interface VideoRecorderProps {
   onSaveLead: (videoBlob: Blob, leadData: LeadFormData) => Promise<void>;
@@ -30,6 +31,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
   // Use external progress if available, otherwise internal progress
   const currentProgress = externalUploadProgress ?? uploadProgress;
   const [isUploading, setIsUploading] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -402,8 +404,26 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
               </Button>
             )}
           </div>
+          
+          {/* Android Diagnostics Button */}
+          <div className="pt-2 border-t">
+            <Button 
+              onClick={() => setShowDiagnostics(true)} 
+              variant="ghost" 
+              size="sm" 
+              className="w-full text-xs"
+            >
+              <Icon name="Smartphone" size={14} className="mr-2" />
+              Android диагностика (если есть проблемы)
+            </Button>
+          </div>
         </CardContent>
       </Card>
+      
+      {/* Android Diagnostics Modal */}
+      {showDiagnostics && (
+        <AndroidDiagnostics onClose={() => setShowDiagnostics(false)} />
+      )}
     </div>
   );
 };

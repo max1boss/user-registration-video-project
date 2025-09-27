@@ -1,6 +1,7 @@
 import React from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { ChunkedUploader } from '@/utils/chunkedUpload';
+import { AndroidFetchHelper } from '@/utils/androidFetchHelper';
 import { LeadFormData } from '@/types/lead';
 
 interface LeadUploadHandlerProps {
@@ -127,53 +128,15 @@ export const useLeadUploadHandler = ({
         
         console.log('Request body keys:', Object.keys(requestBody));
         
-        // Create fetch with extended timeout and retry logic for Android
-        const controller = new AbortController();
-        const timeout = videoSizeMB > 2 ? 600000 : 120000; // 10 minutes for videos >2MB, 2 minutes for smaller
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        // Use AndroidFetchHelper for improved Android compatibility
+        console.log('Starting upload with AndroidFetchHelper');
         
-        // Add retry logic for Android Chrome "failed to fetch" errors
-        let response;
-        let lastError;
-        
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          try {
-            console.log(`Upload attempt ${attempt}/3`);
-            
-            response = await fetch(apiUrls.leads, {
-              method: 'POST',
-              headers: {
-                'X-Auth-Token': token,
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache',
-                'Accept': 'application/json'
-              },
-              body: JSON.stringify(requestBody),
-              signal: controller.signal,
-              mode: 'cors',
-              credentials: 'omit'
-            });
-            
-            break; // Success, exit retry loop
-            
-          } catch (fetchError: any) {
-            lastError = fetchError;
-            console.error(`Fetch attempt ${attempt} failed:`, fetchError.message);
-            
-            if (attempt < 3) {
-              // Wait before retry - increasing delays for Android
-              const delay = attempt * 2000; // 2s, 4s delays
-              console.log(`Waiting ${delay}ms before retry...`);
-              await new Promise(resolve => setTimeout(resolve, delay));
-            }
-          }
-        }
-        
-        if (!response) {
-          throw lastError || new Error('All fetch attempts failed');
-        }
-        
-        clearTimeout(timeoutId);
+        const response = await AndroidFetchHelper.uploadVideo(
+          apiUrls.leads,
+          requestBody,
+          token,
+          videoSizeMB
+        );
 
         console.log('Response status:', response.status);
         console.log('Response headers:', Object.fromEntries(response.headers.entries()));
@@ -224,7 +187,10 @@ export const useLeadUploadHandler = ({
       if (error.name === 'AbortError') {
         errorMessage = 'Превышено время ожидания. Попробуйте записать короче или перезагрузите страницу';
       } else if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
-        errorMessage = 'Ошибка сети. Проверьте интернет или попробуйте перезагрузить страницу';
+        const isAndroid = /android/i.test(navigator.userAgent);
+        errorMessage = isAndroid ? 
+          'Ошибка Android Chrome. Попробуйте: 1) Перезагрузить страницу 2) Переключиться на WiFi 3) Очистить кэш браузера' :
+          'Ошибка сети. Проверьте интернет или попробуйте перезагрузить страницу';
       } else if (error.message.includes('Invalid JSON')) {
         errorMessage = 'Сервер вернул некорректный ответ';
       } else if (error.message.includes('timeout')) {

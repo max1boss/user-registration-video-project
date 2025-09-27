@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { AndroidFetchHelper } from './androidFetchHelper';
 
 export interface ChunkedUploadOptions {
   file: Blob;
@@ -118,7 +119,12 @@ export class ChunkedUploader {
    * Initialize upload session on the server
    */
   private async initializeUploadSession(): Promise<void> {
-    const response = await fetch(this.options.uploadUrl, {
+    // Android-specific configuration
+    const isAndroid = /android/i.test(navigator.userAgent);
+    const isChrome = /chrome/i.test(navigator.userAgent) && !/edge/i.test(navigator.userAgent);
+    const isAndroidChrome = isAndroid && isChrome;
+    
+    const fetchConfig: RequestInit = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -134,6 +140,23 @@ export class ChunkedUploader {
         comments: this.options.comments
       }),
       signal: this.abortController?.signal
+    };
+    
+    // Android-specific optimizations
+    if (isAndroidChrome) {
+      Object.assign(fetchConfig, {
+        mode: 'cors' as RequestMode,
+        credentials: 'omit' as RequestCredentials,
+        cache: 'no-store' as RequestCache,
+        keepalive: false
+      });
+    }
+    
+    const response = await AndroidFetchHelper.fetch({
+      url: this.options.uploadUrl,
+      ...fetchConfig,
+      maxRetries: 3,
+      timeout: 60000 // 1 minute for session init
     });
 
     if (!response.ok) {
@@ -169,13 +192,16 @@ export class ChunkedUploader {
           try {
             console.log(`Chunk ${chunkIndex} upload attempt ${retryAttempt}/3`);
             
-            response = await fetch(this.options.uploadUrl, {
+            // Android-specific fetch configuration for chunks
+            const isAndroid = /android/i.test(navigator.userAgent);
+            const isChrome = /chrome/i.test(navigator.userAgent) && !/edge/i.test(navigator.userAgent);
+            const isAndroidChrome = isAndroid && isChrome;
+            
+            const chunkFetchConfig: RequestInit = {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'X-Auth-Token': this.options.token,
-                'Cache-Control': 'no-cache',
-                'Accept': 'application/json'
+                'X-Auth-Token': this.options.token
               },
               body: JSON.stringify({
                 action: 'upload_chunk',
@@ -184,10 +210,40 @@ export class ChunkedUploader {
                 chunk_data: base64Chunk,
                 chunk_hash: chunkHash
               }),
-              signal: this.abortController?.signal,
-              mode: 'cors',
-              credentials: 'omit'
-            });
+              signal: this.abortController?.signal
+            };
+            
+            if (isAndroidChrome) {
+              // Android Chrome optimized settings
+              Object.assign(chunkFetchConfig, {
+                mode: 'cors' as RequestMode,
+                credentials: 'omit' as RequestCredentials,
+                cache: 'no-store' as RequestCache,
+                keepalive: false
+              });
+            } else {
+              // Standard settings for other browsers
+              Object.assign(chunkFetchConfig.headers!, {
+                'Cache-Control': 'no-cache',
+                'Accept': 'application/json'
+              });
+              Object.assign(chunkFetchConfig, {
+                mode: 'cors' as RequestMode,
+                credentials: 'omit' as RequestCredentials
+              });
+            }
+            
+            response = await AndroidFetchHelper.uploadChunk(
+              this.options.uploadUrl,
+              {
+                action: 'upload_chunk',
+                upload_id: this.uploadId,
+                chunk_index: chunkIndex,
+                chunk_data: base64Chunk,
+                chunk_hash: chunkHash
+              },
+              this.options.token
+            );
             
             break; // Success
             
