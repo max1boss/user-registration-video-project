@@ -34,7 +34,7 @@ export class ChunkedUploader {
   constructor(options: ChunkedUploadOptions) {
     this.uploadId = uuidv4();
     this.options = {
-      chunkSize: 5 * 1024 * 1024, // 5MB default chunk size
+      chunkSize: 2 * 1024 * 1024, // 2MB chunk size for better Android compatibility
       ...options
     };
   }
@@ -206,8 +206,8 @@ export class ChunkedUploader {
           throw error; // Last attempt failed
         }
         
-        // Wait before retry (exponential backoff)
-        await this.sleep(1000 * Math.pow(2, attempt));
+        // Wait before retry (shorter delay for Android)
+        await this.sleep(500 + (attempt * 1000)); // 0.5s, 1.5s, 2.5s delays
       }
     }
   }

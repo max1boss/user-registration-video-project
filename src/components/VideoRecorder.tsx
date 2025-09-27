@@ -25,6 +25,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
   const [videoUrl, setVideoUrl] = useState<string>('');
   const [isRecording, setIsRecording] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadStatus, setUploadStatus] = useState<string>('');
   
   // Use external progress if available, otherwise internal progress
   const currentProgress = externalUploadProgress ?? uploadProgress;
@@ -40,13 +41,13 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: 'environment',
-          width: { ideal: 320, max: 320 },
-          height: { ideal: 240, max: 240 },
-          frameRate: { ideal: 15, max: 15 }
+          width: { ideal: 480, max: 640 },  // Increased for better quality
+          height: { ideal: 360, max: 480 }, // Increased for better quality
+          frameRate: { ideal: 24, max: 30 } // Better frame rate
         },
         audio: {
-          sampleRate: 22050,
-          channelCount: 1
+          sampleRate: 44100,  // CD quality for better audio
+          channelCount: 2     // Stereo audio
         }
       });
       
@@ -167,9 +168,14 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
     setIsUploading(true);
     setUploadProgress(0);
     
-    // Check if this will be a chunked upload
+    // Check if this will be a chunked upload (lowered threshold for Android)
     const videoSizeMB = videoBlob.size / (1024 * 1024);
-    const isChunkedUpload = videoSizeMB > 8;
+    const isChunkedUpload = videoSizeMB > 3; // Lowered from 8MB to 3MB for Android compatibility
+    
+    setUploadStatus(isChunkedUpload ? 
+      `Большой файл (${videoSizeMB.toFixed(1)}MB) - загружаем по частям` : 
+      `Загружаем видео (${videoSizeMB.toFixed(1)}MB)`
+    );
     
     let progressInterval: NodeJS.Timeout | null = null;
     
@@ -292,10 +298,10 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>
-                  {currentProgress > 0 && currentProgress < 100 ? 
-                    (externalUploadProgress !== undefined ? 'Загрузка большого файла...' : 'Загрузка видео...') : 
+                  {uploadStatus || (currentProgress > 0 && currentProgress < 100 ? 
+                    (externalUploadProgress !== undefined ? 'Загрузка по частям...' : 'Загрузка видео...') : 
                     'Подготовка к загрузке...'
-                  }
+                  )}
                 </span>
                 <span>{Math.round(currentProgress)}%</span>
               </div>

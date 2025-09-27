@@ -127,9 +127,10 @@ export const useLeadUploadHandler = ({
         
         console.log('Request body keys:', Object.keys(requestBody));
         
-        // Create fetch with timeout
+        // Create fetch with extended timeout for long videos
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        const timeout = videoSizeMB > 2 ? 300000 : 60000; // 5 minutes for videos >2MB, 1 minute for smaller
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
         
         const response = await fetch(apiUrls.leads, {
           method: 'POST',
@@ -190,7 +191,7 @@ export const useLeadUploadHandler = ({
       let errorMessage = 'Не удалось сохранить лид';
       
       if (error.name === 'AbortError') {
-        errorMessage = 'Превышено время ожидания (30 сек) - попробуйте еще раз';
+        errorMessage = 'Превышено время ожидания - видео слишком большое. Попробуйте записать короче или сжать видео';
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
         errorMessage = 'Ошибка сети - проверьте подключение к интернету';
       } else if (error.message.includes('Invalid JSON')) {
@@ -214,8 +215,8 @@ export const useLeadUploadHandler = ({
     const videoSizeMB = videoBlob.size / (1024 * 1024);
     console.log('Video file size:', videoSizeMB.toFixed(2), 'MB');
     
-    // Use chunked upload for files larger than 8MB
-    if (videoSizeMB > 8) {
+    // Use chunked upload for files larger than 3MB for better Android compatibility
+    if (videoSizeMB > 3) {
       console.log('Using chunked upload for large file');
       await handleChunkedUpload(videoBlob, leadData);
     } else {
