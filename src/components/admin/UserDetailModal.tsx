@@ -98,21 +98,14 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                         {lead.comments && lead.comments.trim() && (
                           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                             <h5 className="font-medium text-gray-700 mb-2">Информация о клиенте:</h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                              {leadInfo.parentName && (
-                                <div><span className="font-medium">Родитель:</span> {leadInfo.parentName}</div>
-                              )}
-                              {leadInfo.childName && (
-                                <div><span className="font-medium">Ребенок:</span> {leadInfo.childName}</div>
-                              )}
-                              {leadInfo.childAge && (
-                                <div><span className="font-medium">Возраст:</span> {leadInfo.childAge}</div>
-                              )}
-                              {leadInfo.phone && (
-                                <div><span className="font-medium">Телефон:</span> {leadInfo.phone}</div>
-                              )}
-                            </div>
-                            {(!leadInfo.parentName && !leadInfo.childName && !leadInfo.childAge && !leadInfo.phone) && (
+                            {leadInfo.isStructured ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                <div><span className="font-medium">Родитель:</span> {leadInfo.parentName || 'не указано'}</div>
+                                <div><span className="font-medium">Ребенок:</span> {leadInfo.childName || 'не указано'}</div>
+                                <div><span className="font-medium">Возраст:</span> {leadInfo.childAge || 'не указано'}</div>
+                                <div><span className="font-medium">Телефон:</span> {leadInfo.phone || 'не указано'}</div>
+                              </div>
+                            ) : (
                               <div className="text-gray-600 italic">
                                 Исходный комментарий: {lead.comments}
                               </div>

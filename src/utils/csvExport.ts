@@ -4,54 +4,42 @@ export const parseChildInfo = (comments: string) => {
   let childName = '';
   let childAge = '';
   let phone = '';
+  let isStructured = false;
   
   if (comments && comments.trim() !== '') {
-    // Парсим данные разделенные запятыми в формате: "Родитель: X, Ребенок: Y, Возраст: Z, Телефон: W"
-    const parts = comments.split(',').map(part => part.trim());
+    // Проверяем содержит ли комментарий структурированные данные
+    const hasStructuredData = comments.toLowerCase().includes('родитель:') || 
+                              comments.toLowerCase().includes('ребенок:') ||
+                              comments.toLowerCase().includes('возраст:') ||
+                              comments.toLowerCase().includes('телефон:');
     
-    parts.forEach(part => {
-      if (part.toLowerCase().startsWith('родитель:')) {
-        parentName = part.replace(/^родитель:\s*/i, '').trim();
-        // Очищаем от лишних символов и мусорных данных
-        if (parentName && parentName !== 'отказ' && parentName !== 'о' && parentName !== 'л' && parentName.length > 1) {
-          // Оставляем только если это нормальное имя
-        } else {
-          parentName = '';
+    if (hasStructuredData) {
+      isStructured = true;
+      // Парсим данные разделенные запятыми в формате: "Родитель: X, Ребенок: Y, Возраст: Z, Телефон: W"
+      const parts = comments.split(',').map(part => part.trim());
+      
+      parts.forEach(part => {
+        if (part.toLowerCase().startsWith('родитель:')) {
+          parentName = part.replace(/^родитель:\s*/i, '').trim();
+        } else if (part.toLowerCase().startsWith('ребенок:')) {
+          childName = part.replace(/^ребенок:\s*/i, '').trim();
+        } else if (part.toLowerCase().startsWith('возраст:')) {
+          childAge = part.replace(/^возраст:\s*/i, '').trim();
+        } else if (part.toLowerCase().startsWith('телефон:')) {
+          phone = part.replace(/^телефон:\s*/i, '').trim();
         }
-      } else if (part.toLowerCase().startsWith('ребенок:')) {
-        childName = part.replace(/^ребенок:\s*/i, '').trim();
-        // Очищаем от лишних символов  
-        if (childName && childName !== 'о' && childName !== 'отказ' && childName !== 'л' && childName.length > 1) {
-          // Оставляем только если это нормальное имя
-        } else {
-          childName = '';
-        }
-      } else if (part.toLowerCase().startsWith('возраст:')) {
-        childAge = part.replace(/^возраст:\s*/i, '').trim();
-        // Очищаем от лишних символов
-        if (childAge && childAge !== 'л' && childAge !== 'о' && childAge !== 'отказ') {
-          // Проверяем что это похоже на возраст
-          if (/^\d+/.test(childAge) || childAge.includes('лет') || childAge.includes('год')) {
-            // Оставляем
-          } else {
-            childAge = '';
-          }
-        } else {
-          childAge = '';
-        }
-      } else if (part.toLowerCase().startsWith('телефон:')) {
-        phone = part.replace(/^телефон:\s*/i, '').trim();
-        // Проверяем что это похоже на телефон
-        if (phone && phone.length > 5 && (/^\+?\d+/.test(phone) || phone.includes('+'))) {
-          // Оставляем
-        } else {
-          phone = '';
-        }
-      }
-    });
+      });
+    }
   }
   
-  return { parentName, childName, childAge, phone };
+  return { 
+    parentName, 
+    childName, 
+    childAge, 
+    phone, 
+    isStructured,
+    originalComments: comments 
+  };
 };
 
 export const createCSVContent = (users: any[]) => {
@@ -68,10 +56,10 @@ export const createCSVContent = (users: any[]) => {
         
         const row = [
           `"${(user.name || '').replace(/"/g, '""')}"`, // Столбец A: Имя пользователя
-          `"${leadInfo.parentName.replace(/"/g, '""')}"`, // Столбец B: Родитель из комментариев
-          `"${leadInfo.childName.replace(/"/g, '""')}"`, // Столбец C: Ребенок из комментариев
-          `"${leadInfo.childAge.replace(/"/g, '""')}"`, // Столбец D: Возраст из комментариев  
-          `"${leadInfo.phone.replace(/"/g, '""')}"` // Столбец E: Телефон из комментариев
+          `"${(leadInfo.parentName || '').replace(/"/g, '""')}"`, // Столбец B: Родитель из комментариев
+          `"${(leadInfo.childName || '').replace(/"/g, '""')}"`, // Столбец C: Ребенок из комментариев
+          `"${(leadInfo.childAge || '').replace(/"/g, '""')}"`, // Столбец D: Возраст из комментариев  
+          `"${(leadInfo.phone || '').replace(/"/g, '""')}"` // Столбец E: Телефон из комментариев
         ];
         csvRows.push(row.join(';'));
       });
