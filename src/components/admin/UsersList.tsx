@@ -276,12 +276,7 @@ const UserCard: React.FC<UserCardProps> = ({
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="font-semibold text-gray-900 truncate text-lg">{user.name}</h4>
-              <p className="text-gray-600 truncate text-sm">{user.email}</p>
               <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                <div className="flex items-center gap-1">
-                  <Icon name="Calendar" size={12} />
-                  <span>{formatDate(user.created_at)}</span>
-                </div>
                 <div className="flex items-center gap-1">
                   <Icon name="FileText" size={12} />
                   <span>{user.leads.length} лидов</span>
