@@ -60,7 +60,7 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({
       {/* Подсказки */}
       <div className="text-center text-sm text-gray-500 space-y-1">
         <p>💡 Поверните телефон горизонтально для лучшего качества</p>
-        <p>🔄 Нажмите на иконку сверху для переключения камеры</p>
+        <p>📹 Запись ведется на тыловую камеру телефона</p>
       </div>
     </div>
   );

@@ -49,15 +49,7 @@ const CameraView: React.FC<CameraViewProps> = ({
         </div>
       )}
 
-      {/* Переключатель камеры */}
-      {!isRecording && !isPreviewMode && (
-        <button
-          onClick={onSwitchCamera}
-          className="absolute top-4 right-4 w-12 h-12 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
-        >
-          <Icon name="RotateCcw" size={24} />
-        </button>
-      )}
+      {/* Переключатель камеры убран - используется только тыловая камера */}
     </div>
   );
 };

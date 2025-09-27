@@ -30,7 +30,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [hasVideoAccess, setHasVideoAccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentCamera, setCurrentCamera] = useState<'user' | 'environment'>('user');
+  const currentCamera = 'environment'; // Только тыловая камера
 
   // Рефы для управления записью
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -257,44 +257,10 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     }
   };
 
-  // Переключение камеры
-  const switchCamera = async () => {
-    if (!streamRef.current) return;
-    
-    // Останавливаем текущий поток
-    streamRef.current.getTracks().forEach(track => track.stop());
-    
-    // Переключаем камеру
-    const newCamera = currentCamera === 'user' ? 'environment' : 'user';
-    setCurrentCamera(newCamera);
-    
-    try {
-      const constraints = {
-        video: {
-          facingMode: newCamera,
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 }
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      };
-
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      streamRef.current = stream;
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-    } catch (err) {
-      console.error('Ошибка переключения камеры:', err);
-      setError('Не удалось переключить камеру');
-      // Возвращаем предыдущую камеру
-      setCurrentCamera(currentCamera);
-    }
+  // Переключение камеры отключено - используется только тыловая камера
+  const switchCamera = () => {
+    // Функция оставлена для совместимости, но ничего не делает
+    console.log('Переключение камеры отключено - используется только тыловая камера');
   };
 
   // Экран запроса разрешений
