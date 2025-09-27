@@ -278,7 +278,8 @@ const Index = () => {
       }
     });
     
-    return csvRows.join('\r\n');
+    // Добавляем BOM для корректного отображения русского текста
+    return '\uFEFF' + csvRows.join('\r\n');
   };
 
   const handleCloseEditModal = () => {

@@ -23,6 +23,14 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
 }) => {
   if (!showUserDetail || !selectedUser) return null;
 
+  // Отладочная информация
+  console.log('Selected user data:', selectedUser);
+  console.log('User leads:', selectedUser.leads);
+  selectedUser.leads?.forEach((lead: any, index: number) => {
+    console.log(`Lead ${index}:`, lead);
+    console.log(`Lead ${index} audios:`, lead.audios);
+  });
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
@@ -56,7 +64,12 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
               </div>
               <div className="bg-green-50 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">
-                  {selectedUser.leads?.reduce((acc: number, lead: any) => acc + (lead.audios?.length || 0), 0) || 0}
+                  {selectedUser.leads?.reduce((acc: number, lead: any) => {
+                    const audioCount = (lead.audios?.length || 0) + 
+                                      (lead.audio_files?.length || 0) + 
+                                      (lead.recordings?.length || 0);
+                    return acc + audioCount;
+                  }, 0) || 0}
                 </div>
                 <div className="text-green-800">Аудиозаписей</div>
               </div>
@@ -84,9 +97,13 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                               {lead.created_at ? new Date(lead.created_at).toLocaleString('ru-RU') : 'Дата неизвестна'}
                             </p>
                           </div>
-                          {lead.audios && lead.audios.length > 0 && (
+                          {(
+                            (lead.audios && lead.audios.length > 0) ||
+                            (lead.audio_files && lead.audio_files.length > 0) ||
+                            (lead.recordings && lead.recordings.length > 0)
+                          ) && (
                             <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                              {lead.audios.length} аудиозаписей
+                              {(lead.audios?.length || 0) + (lead.audio_files?.length || 0) + (lead.recordings?.length || 0)} аудиозаписей
                             </span>
                           )}
                         </div>
@@ -118,11 +135,22 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                         )}
 
                         {/* Аудиозаписи */}
-                        {lead.audios && lead.audios.length > 0 && (
+                        {/* Проверяем разные возможные поля для аудиозаписей */}
+                        {console.log(`Lead ${leadIndex} all keys:`, Object.keys(lead))}
+                        {console.log(`Lead ${leadIndex} audios field:`, lead.audios)}
+                        {console.log(`Lead ${leadIndex} audio_files field:`, lead.audio_files)}
+                        {console.log(`Lead ${leadIndex} recordings field:`, lead.recordings)}
+                        
+                        {(
+                          (lead.audios && lead.audios.length > 0) ||
+                          (lead.audio_files && lead.audio_files.length > 0) ||
+                          (lead.recordings && lead.recordings.length > 0)
+                        ) && (
                           <div>
                             <h5 className="font-medium text-gray-700 mb-2">Аудиозаписи:</h5>
                             <div className="space-y-2">
-                              {lead.audios.map((audio: any, audioIndex: number) => (
+                              {/* Определяем какое поле с аудиозаписями использовать */}
+                              {(lead.audios || lead.audio_files || lead.recordings || []).map((audio: any, audioIndex: number) => (
                                 <div key={audio.id || audioIndex} className="border border-gray-100 rounded-lg p-3">
                                   <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm text-gray-600">
@@ -139,7 +167,7 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                                       </span>
                                     )}
                                   </div>
-                                  {audio.file_url ? (
+                                  {(audio.file_url || audio.url || audio.audio_url) ? (
                                     <div className="flex items-center gap-2">
                                       <audio 
                                         controls 
@@ -147,9 +175,10 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                                         onPlay={() => onAudioPlay(audio.id)}
                                         onPause={onAudioPause}
                                       >
-                                        <source src={audio.file_url} type="audio/mpeg" />
-                                        <source src={audio.file_url} type="audio/wav" />
-                                        <source src={audio.file_url} type="audio/ogg" />
+                                        {/* Попробуем разные возможные поля URL */}
+                                        <source src={audio.file_url || audio.url || audio.audio_url} type="audio/mpeg" />
+                                        <source src={audio.file_url || audio.url || audio.audio_url} type="audio/wav" />
+                                        <source src={audio.file_url || audio.url || audio.audio_url} type="audio/ogg" />
                                         Ваш браузер не поддерживает аудио элемент.
                                       </audio>
                                     </div>
@@ -164,7 +193,11 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                           </div>
                         )}
 
-                        {(!lead.audios || lead.audios.length === 0) && (
+                        {(
+                          (!lead.audios || lead.audios.length === 0) &&
+                          (!lead.audio_files || lead.audio_files.length === 0) &&
+                          (!lead.recordings || lead.recordings.length === 0)
+                        ) && (
                           <div className="text-gray-500 text-sm italic">
                             Нет аудиозаписей
                           </div>
