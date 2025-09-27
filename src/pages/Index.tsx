@@ -69,6 +69,16 @@ const Index = () => {
 
       const data = await response.json();
       
+      // Отладка: посмотрим на структуру данных
+      console.log('Данные с сервера:', data);
+      if (data.users && data.users.length > 0) {
+        console.log('Первый пользователь:', data.users[0]);
+        if (data.users[0].leads && data.users[0].leads.length > 0) {
+          console.log('Первый лид:', data.users[0].leads[0]);
+          console.log('Комментарии лида:', data.users[0].leads[0].comments);
+        }
+      }
+      
       // Создаём CSV с правильной кодировкой UTF-8
       const csvContent = createCSVContent(data.users || []);
       // Добавляем BOM для правильного отображения в Excel
