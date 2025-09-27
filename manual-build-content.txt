@@ -1,0 +1,121 @@
+name: 🎯 Manual APK Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '📋 Версия приложения (например: 1.2.0)'
+        required: true
+        default: '1.0.0'
+        type: string
+      build_type:
+        description: '🔧 Тип сборки'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+        - release
+        - debug
+      create_release:
+        description: '🏷️ Создать GitHub Release?'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  manual-build:
+    name: 🚀 Manual Android Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: ☕ Setup Java 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: 🚀 Setup Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: 🤖 Setup Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        api-level: '34'
+        build-tools: '34.0.0'
+
+    - name: 📦 Install dependencies
+      run: |
+        npm ci
+        npm install -g @capacitor/cli
+
+    - name: 🏗️ Build React application
+      run: npm run build
+
+    - name: 📱 Setup Capacitor Android
+      run: |
+        if [ ! -d "android" ]; then
+          npx cap add android
+        fi
+        npx cap sync android
+
+    - name: 🔨 Build Android APK
+      run: |
+        cd android
+        chmod +x gradlew
+        if [ "${{ inputs.build_type }}" == "release" ]; then
+          ./gradlew assembleRelease --no-daemon
+        else
+          ./gradlew assembleDebug --no-daemon
+        fi
+
+    - name: 📂 Prepare APK file
+      id: prepare_apk
+      run: |
+        if [ "${{ inputs.build_type }}" == "release" ]; then
+          APK_PATH=$(find android -name "*release*.apk" -type f | head -1)
+        else
+          APK_PATH=$(find android -name "*debug*.apk" -type f | head -1)
+        fi
+        
+        FINAL_NAME="user-registration-video-v${{ inputs.version }}-${{ inputs.build_type }}.apk"
+        cp "$APK_PATH" "$FINAL_NAME"
+        echo "apk_path=$FINAL_NAME" >> $GITHUB_OUTPUT
+
+    - name: 📤 Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: USER-REGISTRATION-VIDEO-v${{ inputs.version }}-${{ inputs.build_type }}
+        path: ${{ steps.prepare_apk.outputs.apk_path }}
+        retention-days: 90
+
+    - name: 🏷️ Create GitHub Release
+      if: inputs.create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ inputs.version }}
+        name: "User Registration Video v${{ inputs.version }}"
+        body: |
+          ## 📱 User Registration Video v${{ inputs.version }}
+          
+          ### 📥 Установка:
+          1. Скачайте APK файл ниже
+          2. Включите "Неизвестные источники" в Android
+          3. Установите APK файл
+          
+          ### 🚀 Возможности:
+          - 📹 HD/4K видеозапись
+          - 📤 Фоновая загрузка файлов  
+          - 💾 Офлайн сохранение
+          - 🔐 Регистрация пользователей
+        files: ${{ steps.prepare_apk.outputs.apk_path }}
+        draft: false
+        prerelease: ${{ inputs.build_type == 'debug' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
