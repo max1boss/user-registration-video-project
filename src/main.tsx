@@ -3,5 +3,5 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './index.css'
 
-// Cache cleared: removed Google Sheets dependencies
+// Cache cleared: fixed duplicate Index declaration - v2
 createRoot(document.getElementById("root")!).render(<App />);
