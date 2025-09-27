@@ -55,17 +55,78 @@ const UsersList: React.FC<UsersListProps> = ({
   editingUserId,
   formatDate
 }) => {
+  const [showAll, setShowAll] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const usersPerPage = 10;
+  
+  const displayedUsers = showAll ? 
+    users.slice(currentPage * usersPerPage, (currentPage + 1) * usersPerPage) : 
+    users.slice(0, 5);
+  
+  const totalPages = Math.ceil(users.length / usersPerPage);
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Icon name="Users" size={20} />
-          Пользователи ({users.length})
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Icon name="Users" size={20} />
+            Пользователи ({users.length})
+          </div>
+          {!showAll && users.length > 5 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowAll(true)}
+            >
+              Показать всех ({users.length})
+            </Button>
+          )}
+          {showAll && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                setShowAll(false);
+                setCurrentPage(0);
+              }}
+            >
+              Показать первых 5
+            </Button>
+          )}
         </CardTitle>
+        {showAll && (
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>
+              Показано {currentPage * usersPerPage + 1}-{Math.min((currentPage + 1) * usersPerPage, users.length)} из {users.length} пользователей
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 0}
+                onClick={() => setCurrentPage(currentPage - 1)}
+              >
+                <Icon name="ChevronLeft" size={16} />
+              </Button>
+              <span className="px-2">
+                {currentPage + 1} из {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages - 1}
+                onClick={() => setCurrentPage(currentPage + 1)}
+              >
+                <Icon name="ChevronRight" size={16} />
+              </Button>
+            </div>
+          </div>
+        )}
       </CardHeader>
-      <CardContent className="max-h-96 overflow-y-auto">
+      <CardContent className={showAll ? "max-h-[600px] overflow-y-auto" : ""}>
         <div className="space-y-3">
-          {users.map((user) => (
+          {displayedUsers.map((user) => (
             <div
               key={user.id}
               className={`p-3 border rounded-lg cursor-pointer transition-colors ${

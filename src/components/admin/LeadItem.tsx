@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
@@ -23,6 +23,9 @@ interface LeadItemProps {
   onDownloadAudio: (leadId: string, leadTitle: string, userName: string) => void;
   onDeleteLead: (leadId: string, leadTitle: string) => void;
   formatDate: (dateString: string) => string;
+  // Добавляем API для получения аудио URL
+  videoApiUrl?: string;
+  token?: string;
 }
 
 const LeadItem: React.FC<LeadItemProps> = ({
@@ -33,12 +36,57 @@ const LeadItem: React.FC<LeadItemProps> = ({
   onLoadAudio,
   onDownloadAudio,
   onDeleteLead,
-  formatDate
+  formatDate,
+  videoApiUrl,
+  token
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [loadingAudioUrl, setLoadingAudioUrl] = useState(false);
+  const [showPlayer, setShowPlayer] = useState(false);
   
   // Проверяем наличие аудио по разным полям для совместимости
   const hasAudio = lead.has_audio || Boolean(lead.audio_filename) || Boolean(lead.video_filename);
+
+  // Загружаем аудио для встроенного плеера
+  const loadAudioForPlayer = async () => {
+    if (audioUrl || loadingAudioUrl || !videoApiUrl || !token) return;
+    
+    setLoadingAudioUrl(true);
+    try {
+      const response = await fetch(`${videoApiUrl}?id=${lead.id}`, {
+        headers: {
+          'X-Auth-Token': token,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const audioDataUrl = data.audio_url || data.video_url;
+        if (audioDataUrl) {
+          setAudioUrl(audioDataUrl);
+          setShowPlayer(true);
+        } else {
+          console.error('URL аудио не найден в ответе');
+        }
+      } else {
+        console.error('Не удалось загрузить аудио');
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки аудио:', error);
+    } finally {
+      setLoadingAudioUrl(false);
+    }
+  };
+
+  // Очистка состояния при размонтировании
+  useEffect(() => {
+    return () => {
+      if (audioUrl && audioUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
   
   const handleDelete = async () => {
     await onDeleteLead(lead.id, lead.title);
@@ -56,6 +104,41 @@ const LeadItem: React.FC<LeadItemProps> = ({
       <div className="text-sm text-muted-foreground mb-3">
         <LeadInfo comments={lead.comments} />
       </div>
+
+      {/* Встроенный аудиоплеер */}
+      {hasAudio && showPlayer && audioUrl && (
+        <div className="mb-3 p-3 bg-muted/30 rounded-lg border">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Icon name="Volume2" size={16} className="text-primary" />
+              <span className="text-sm font-medium">Аудиозапись</span>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setShowPlayer(false);
+                if (audioUrl && audioUrl.startsWith('blob:')) {
+                  URL.revokeObjectURL(audioUrl);
+                }
+                setAudioUrl(null);
+              }}
+              className="w-6 h-6 p-0"
+            >
+              <Icon name="X" size={12} />
+            </Button>
+          </div>
+          <audio 
+            src={audioUrl} 
+            controls 
+            preload="metadata"
+            className="w-full"
+            style={{ height: '32px' }}
+          >
+            Ваш браузер не поддерживает аудио.
+          </audio>
+        </div>
+      )}
       
       {/* Mobile: Stack date and buttons vertically */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -68,13 +151,25 @@ const LeadItem: React.FC<LeadItemProps> = ({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => onLoadAudio(lead.id)}
-                disabled={loadingAudio}
+                onClick={() => {
+                  if (showPlayer && audioUrl) {
+                    setShowPlayer(false);
+                    if (audioUrl && audioUrl.startsWith('blob:')) {
+                      URL.revokeObjectURL(audioUrl);
+                    }
+                    setAudioUrl(null);
+                  } else {
+                    loadAudioForPlayer();
+                  }
+                }}
+                disabled={loadingAudioUrl}
                 className="w-9 h-9 p-0 touch-manipulation"
-                title="Прослушать аудио"
+                title={showPlayer ? "Скрыть плеер" : "Показать плеер"}
               >
-                {loadingAudio ? (
+                {loadingAudioUrl ? (
                   <Icon name="Loader2" size={14} className="animate-spin" />
+                ) : showPlayer ? (
+                  <Icon name="VolumeX" size={14} />
                 ) : (
                   <Icon name="Volume2" size={14} />
                 )}

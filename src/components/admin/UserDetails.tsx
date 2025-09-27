@@ -34,6 +34,9 @@ interface UserDetailsProps {
   onDownloadAllUserAudios: (user: User) => void;
   onCloseAudio: () => void;
   formatDate: (dateString: string) => string;
+  // Добавляем API параметры для встроенного плеера
+  videoApiUrl?: string;
+  token?: string;
 }
 
 const UserDetails: React.FC<UserDetailsProps> = ({
@@ -46,7 +49,9 @@ const UserDetails: React.FC<UserDetailsProps> = ({
   onDeleteLead,
   onDownloadAllUserAudios,
   onCloseAudio,
-  formatDate
+  formatDate,
+  videoApiUrl,
+  token
 }) => {
   return (
     <Card>
@@ -96,6 +101,8 @@ const UserDetails: React.FC<UserDetailsProps> = ({
                         onDownloadAudio={onDownloadAudio}
                         onDeleteLead={onDeleteLead}
                         formatDate={formatDate}
+                        videoApiUrl={videoApiUrl}
+                        token={token}
                       />
                     ))}
                   </>

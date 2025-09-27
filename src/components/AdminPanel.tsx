@@ -108,6 +108,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           onDownloadAllUserAudios={downloadAllUserAudios}
           onCloseAudio={closeAudio}
           formatDate={formatDate}
+          videoApiUrl={videoApiUrl}
+          token={token}
         />
       </div>
     </div>
