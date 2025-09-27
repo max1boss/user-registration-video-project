@@ -106,8 +106,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
 
       if (response.ok) {
         const data = await response.json();
-        if (data.audio_url) {
-          setAudioUrl(data.audio_url);
+        // Проверяем разные названия поля для совместимости
+        const audioUrl = data.audio_url || data.video_url;
+        if (audioUrl) {
+          setAudioUrl(audioUrl);
         } else {
           toast({
             title: 'Аудио не найдено',
@@ -142,8 +144,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
 
       if (response.ok) {
         const data = await response.json();
-        if (data.audio_url) {
-          const dataUrl = data.audio_url;
+        const audioUrl = data.audio_url || data.video_url;
+        if (audioUrl) {
+          const dataUrl = audioUrl;
           const response = await fetch(dataUrl);
           const blob = await response.blob();
           
@@ -362,6 +365,34 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
       });
     } finally {
       setEditingUserId(null);
+    }
+  };
+
+  const downloadAllUserAudios = async (user: User) => {
+    const leadsWithAudio = user.leads.filter(l => l.has_audio || l.audio_filename || l.video_filename);
+    
+    if (leadsWithAudio.length === 0) {
+      toast({
+        title: 'Нет аудиозаписей',
+        description: 'У этого пользователя нет аудиозаписей для скачивания',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    toast({
+      title: `Скачивание ${leadsWithAudio.length} аудиозаписей`,
+      description: `Начинаем скачивание всех аудио пользователя ${user.name}`,
+    });
+
+    for (const lead of leadsWithAudio) {
+      try {
+        await downloadAudio(lead.id, lead.title, user.name);
+        // Небольшая задержка между скачиваниями
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error(`Error downloading audio for lead ${lead.id}:`, error);
+      }
     }
   };
 
