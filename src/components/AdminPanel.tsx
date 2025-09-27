@@ -32,9 +32,11 @@ interface AdminPanelProps {
   token: string;
   adminApiUrl: string;
   videoApiUrl: string;
+  deleteUserApiUrl: string;
+  editUserApiUrl: string;
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl }) => {
+const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl, deleteUserApiUrl, editUserApiUrl }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<AdminStats>({ total_users: 0, total_leads: 0, total_videos: 0 });
   const [loading, setLoading] = useState(true);
@@ -42,6 +44,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
   const [videoUrl, setVideoUrl] = useState<string>('');
   const [loadingVideo, setLoadingVideo] = useState(false);
   const [deletingLeadId, setDeletingLeadId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
   
   const { toast } = useToast();
 
@@ -253,6 +257,106 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
     }
   };
 
+  const deleteUser = async (userId: string, userName: string) => {
+    setDeletingUserId(userId);
+    
+    try {
+      const response = await fetch(deleteUserApiUrl, {
+        method: 'DELETE',
+        headers: {
+          'X-Auth-Token': token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userId
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success) {
+          toast({
+            title: '✅ Пользователь удален',
+            description: `Пользователь "${userName}" и все его данные удалены из системы`,
+          });
+          
+          // Clear selected user if it was deleted
+          if (selectedUser && selectedUser.id === userId) {
+            setSelectedUser(null);
+          }
+          
+          // Reload admin data to refresh the UI
+          await loadAdminData();
+        } else {
+          throw new Error(data.error || 'Failed to delete user');
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Network error');
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка удаления',
+        description: `Не удалось удалить пользователя: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
+        variant: 'destructive'
+      });
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
+  const editUser = async (userId: string, currentName: string) => {
+    const newName = prompt(`Изменить имя пользователя:`, currentName);
+    
+    if (!newName || newName.trim() === '' || newName === currentName) {
+      return; // Cancelled or no changes
+    }
+    
+    setEditingUserId(userId);
+    
+    try {
+      const response = await fetch(editUserApiUrl, {
+        method: 'PUT',
+        headers: {
+          'X-Auth-Token': token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          new_name: newName.trim()
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success) {
+          toast({
+            title: '✅ Имя пользователя изменено',
+            description: `Имя изменено с "${data.user.old_name}" на "${data.user.name}"`,
+          });
+          
+          // Reload admin data to refresh the UI
+          await loadAdminData();
+        } else {
+          throw new Error(data.error || 'Failed to edit user');
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Network error');
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка редактирования',
+        description: `Не удалось изменить имя пользователя: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
+        variant: 'destructive'
+      });
+    } finally {
+      setEditingUserId(null);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ru-RU', {
       year: 'numeric',
@@ -284,6 +388,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
           selectedUser={selectedUser}
           onSelectUser={setSelectedUser}
           onDownloadAllUserVideos={downloadAllUserVideos}
+          onDeleteUser={deleteUser}
+          onEditUser={editUser}
+          deletingUserId={deletingUserId}
+          editingUserId={editingUserId}
           formatDate={formatDate}
         />
         
