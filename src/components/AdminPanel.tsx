@@ -3,10 +3,9 @@ import Icon from '@/components/ui/icon';
 import AdminStatsCards from './admin/AdminStatsCards';
 import UsersList from './admin/UsersList';
 import UserDetails from './admin/UserDetails';
-import ServiceAccountModal from './admin/ServiceAccountModal';
 import { useAdminData } from '@/hooks/useAdminData';
 import { useAdminActions } from '@/hooks/useAdminActions';
-import { useGoogleSheetsLogic } from '@/hooks/useGoogleSheetsLogic';
+import { useExcelExport } from '@/hooks/useExcelExport';
 
 interface AdminPanelProps {
   token: string;
@@ -58,17 +57,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     setSelectedUser
   });
 
-  // Google Sheets management
+  // Excel export management
   const {
-    exportingToSheets,
-    showServiceAccountModal,
-    serviceAccountKey,
-    autoExportEnabled,
-    setShowServiceAccountModal,
-    exportToGoogleSheets,
-    handleServiceAccountSubmit,
-    handleToggleAutoExport
-  } = useGoogleSheetsLogic();
+    exporting,
+    exportToExcel
+  } = useExcelExport();
 
   if (loading) {
     return (
@@ -85,11 +78,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
       <AdminStatsCards 
         stats={stats} 
-        onExportToSheets={() => exportToGoogleSheets(users)}
-        exportingToSheets={exportingToSheets}
-        hasServiceAccount={!!serviceAccountKey}
-        autoExportEnabled={autoExportEnabled}
-        onToggleAutoExport={handleToggleAutoExport}
+        onExportToExcel={() => exportToExcel(users)}
+        exportingToExcel={exporting}
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -118,12 +108,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           formatDate={formatDate}
         />
       </div>
-
-      <ServiceAccountModal
-        isOpen={showServiceAccountModal}
-        onClose={() => setShowServiceAccountModal(false)}
-        onSubmit={handleServiceAccountSubmit}
-      />
     </div>
   );
 };

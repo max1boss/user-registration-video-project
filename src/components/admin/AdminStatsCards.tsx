@@ -10,63 +10,33 @@ interface AdminStats {
 
 interface AdminStatsCardsProps {
   stats: AdminStats;
-  onExportToSheets?: () => void;
-  exportingToSheets?: boolean;
-  hasServiceAccount?: boolean;
-  autoExportEnabled?: boolean;
-  onToggleAutoExport?: (enabled: boolean) => void;
+  onExportToExcel?: () => void;
+  exportingToExcel?: boolean;
 }
 
-const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ stats, onExportToSheets, exportingToSheets, hasServiceAccount, autoExportEnabled, onToggleAutoExport }) => {
+const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ stats, onExportToExcel, exportingToExcel }) => {
   return (
     <div className="space-y-4 mb-8">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Статистика</h2>
-        {onExportToSheets && (
-          <div className="flex items-center gap-3">
-            {!hasServiceAccount && (
-              <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-lg">
-                <Icon name="AlertTriangle" size={14} />
-                <span>Требуется настройка Google Sheets</span>
-              </div>
+        {onExportToExcel && (
+          <button
+            onClick={onExportToExcel}
+            disabled={exportingToExcel}
+            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            {exportingToExcel ? (
+              <>
+                <Icon name="Loader2" size={16} className="animate-spin" />
+                Экспортирую...
+              </>
+            ) : (
+              <>
+                <Icon name="Download" size={16} />
+                Скачать Excel с данными
+              </>
             )}
-            {hasServiceAccount && (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-lg">
-                  <Icon name="CheckCircle" size={14} />
-                  <span>Google Sheets настроен</span>
-                </div>
-                {onToggleAutoExport && (
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={autoExportEnabled || false}
-                      onChange={(e) => onToggleAutoExport(e.target.checked)}
-                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                    />
-                    <span className="text-gray-700">Автоэкспорт новых лидов</span>
-                  </label>
-                )}
-              </div>
-            )}
-            <button
-              onClick={onExportToSheets}
-              disabled={exportingToSheets}
-              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-            >
-              {exportingToSheets ? (
-                <>
-                  <Icon name="Loader2" size={16} className="animate-spin" />
-                  Экспортирую...
-                </>
-              ) : (
-                <>
-                  <Icon name="FileSpreadsheet" size={16} />
-                  {hasServiceAccount ? 'Экспорт в Google Таблицы' : 'Настроить экспорт'}
-                </>
-              )}
-            </button>
-          </div>
+          </button>
         )}
       </div>
       
