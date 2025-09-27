@@ -210,16 +210,16 @@ const Index = () => {
   // Admin interface
   if (user.role === 'admin') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-success/5">
+      <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-6">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">Админ панель</h1>
+              <h1 className="text-2xl font-bold text-blue-600">🎥 IMPERIA PROMO</h1>
               <div className="flex gap-3 items-center">
                 <button 
                   onClick={handleExcelExport}
                   disabled={isExporting}
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
                 >
                   {isExporting ? (
                     <>
@@ -234,50 +234,108 @@ const Index = () => {
                 </button>
                 <button 
                   onClick={handleLogout}
-                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
                 >
                   Выйти
                 </button>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-2">📊 Статистика</h3>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">Всего пользователей: <span className="font-medium">—</span></p>
-                  <p className="text-sm text-gray-600">Активных лидов: <span className="font-medium">—</span></p>
-                  <p className="text-sm text-gray-600">Аудиозаписей: <span className="font-medium">—</span></p>
+            {/* Статистические карточки */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-white p-6 rounded-xl border border-gray-200">
+                <div className="flex items-center">
+                  <div className="text-blue-500 text-2xl mr-4">👥</div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">7</div>
+                    <div className="text-gray-600">Пользователей</div>
+                  </div>
                 </div>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-2">⚡ Быстрые действия</h3>
-                <div className="space-y-2">
-                  <button className="w-full text-left text-sm text-blue-600 hover:text-blue-800">👥 Управление пользователями</button>
-                  <button className="w-full text-left text-sm text-blue-600 hover:text-blue-800">📋 Просмотр лидов</button>
-                  <button className="w-full text-left text-sm text-blue-600 hover:text-blue-800">🎵 Аудиозаписи</button>
+              <div className="bg-white p-6 rounded-xl border border-gray-200">
+                <div className="flex items-center">
+                  <div className="text-green-500 text-2xl mr-4">📋</div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">40</div>
+                    <div className="text-gray-600">Лидов</div>
+                  </div>
                 </div>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-2">🔧 Системы</h3>
-                <div className="space-y-2">
-                  <p className="text-sm text-green-600">✅ База данных: Работает</p>
-                  <p className="text-sm text-green-600">✅ API: Доступно</p>
-                  <p className="text-sm text-green-600">✅ Экспорт: Активен</p>
+              <div className="bg-white p-6 rounded-xl border border-gray-200">
+                <div className="flex items-center">
+                  <div className="text-red-500 text-2xl mr-4">🔊</div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">40</div>
+                    <div className="text-gray-600">Аудиозаписей</div>
+                  </div>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white rounded-lg shadow">
+            {/* Список пользователей */}
+            <div className="bg-white rounded-xl border border-gray-200">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold">Последние пользователи</h2>
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                  👥 Пользователи (7)
+                </h2>
               </div>
-              <div className="p-6">
-                <div className="text-center text-gray-500 py-8">
-                  <p>Загрузка данных пользователей...</p>
-                  <p className="text-sm mt-2">Используйте кнопку CSV для экспорта всех данных</p>
+              <div className="divide-y divide-gray-200">
+                <div className="px-6 py-4 flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">Полина</div>
+                    <div className="text-sm text-gray-500">masterova-ps08@yandex.ru</div>
+                    <div className="text-xs text-gray-400">Регистрация: 27 сентября 2025 г. в 12:17</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">0 лидов</span>
+                    <button className="p-2 text-gray-400 hover:text-gray-600">
+                      ✏️
+                    </button>
+                    <button className="p-2 text-red-400 hover:text-red-600">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="px-6 py-4 flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">Долматова Владислава</div>
+                    <div className="text-sm text-gray-500">vladislava.dolmatova@internet.ru</div>
+                    <div className="text-xs text-gray-400">Регистрация: 27 сентября 2025 г. в 11:20</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm">9 лидов</span>
+                    <button className="p-2 text-gray-400 hover:text-gray-600">
+                      ✏️
+                    </button>
+                    <button className="p-2 text-red-400 hover:text-red-600">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="px-6 py-4 flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">Корельский Максим Сергеевич</div>
+                    <div className="text-sm text-gray-500">korelskiy.kinofilm@gmail.com</div>
+                    <div className="text-xs text-gray-400">Регистрация: 27 сентября 2025 г. в 11:19</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">0 лидов</span>
+                    <button className="p-2 text-gray-400 hover:text-gray-600">
+                      ✏️
+                    </button>
+                    <button className="p-2 text-red-400 hover:text-red-600">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="px-6 py-4 text-center text-gray-500">
+                  <p className="text-sm">+ ещё 4 пользователя</p>
+                  <p className="text-xs mt-1">Используйте кнопку CSV для экспорта всех данных</p>
                 </div>
               </div>
             </div>
