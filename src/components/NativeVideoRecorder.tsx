@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { useNativeCamera } from '@/hooks/useNativeCamera';
+import { useToast } from '@/hooks/use-toast';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
@@ -16,7 +17,7 @@ const NativeVideoRecorder: React.FC<NativeVideoRecorderProps> = ({
   onError 
 }) => {
   const { isNative, recordVideo, isRecording, error } = useNativeCamera();
-
+  const { toast } = useToast();
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -46,26 +47,40 @@ const NativeVideoRecorder: React.FC<NativeVideoRecorderProps> = ({
   useEffect(() => {
     if (error) {
       onError(error);
-
+      toast({
+        title: 'Ошибка записи',
+        description: error,
+        variant: 'destructive'
+      });
     }
   }, [error, onError, toast]);
 
   const handleRecordVideo = async () => {
     try {
-
+      toast({
+        title: '📹 Запись видео',
+        description: 'Начинаем запись с камеры устройства...'
+      });
 
       const videoBlob = await recordVideo();
       
       if (videoBlob) {
         onVideoRecorded(videoBlob);
-
+        toast({
+          title: '✅ Видео записано!',
+          description: `Размер: ${(videoBlob.size / (1024 * 1024)).toFixed(2)} MB`
+        });
       } else {
         throw new Error('Не удалось записать видео');
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Ошибка записи видео';
       onError(errorMessage);
-
+      toast({
+        title: '❌ Ошибка',
+        description: errorMessage,
+        variant: 'destructive'
+      });
     }
   };
 

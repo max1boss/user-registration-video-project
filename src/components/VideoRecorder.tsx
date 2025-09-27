@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
-
+import { useToast } from '@/hooks/use-toast';
 import { LeadFormData } from '@/types/lead';
 
 interface VideoRecorderProps {
@@ -32,7 +32,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-
+  const { toast } = useToast();
 
   const startAudioRecording = async () => {
     try {
@@ -99,7 +99,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
         errorMessage = 'Доступ к микрофону запрещен. Разрешите доступ в настройках браузера';
       }
       
-
+      toast({ title: 'Ошибка', description: errorMessage, variant: 'destructive' });
     }
   };
 

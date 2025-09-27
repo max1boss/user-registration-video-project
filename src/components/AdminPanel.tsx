@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
-
+import { useToast } from '@/hooks/use-toast';
 import AdminStatsCards from './admin/AdminStatsCards';
 import UsersList from './admin/UsersList';
 import UserDetails from './admin/UserDetails';
@@ -51,48 +50,31 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [showUsersRanking, setShowUsersRanking] = useState(false);
   
-
+  const { toast } = useToast();
 
   useEffect(() => {
     loadAdminData();
   }, []);
 
-  const loadAdminData = async (retryCount = 0) => {
-    console.log(`Loading admin data from: ${adminApiUrl} (attempt ${retryCount + 1})`);
-    console.log('Token:', token ? 'Present' : 'Missing');
-    
+  const loadAdminData = async () => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
       const response = await fetch(adminApiUrl, {
         method: 'GET',
         headers: {
           'X-Auth-Token': token,
           'Content-Type': 'application/json'
-        },
-        signal: controller.signal
+        }
       });
-      
-      clearTimeout(timeoutId);
-
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Received data:', data);
-        
         const newUsers = data.users || [];
         setUsers(newUsers);
         const stats = data.statistics || { total_users: 0, total_leads: 0, total_audios: 0 };
-        
         // Совместимость с разными названиями полей
         if (stats.total_videos !== undefined && stats.total_audios === undefined) {
           stats.total_audios = stats.total_videos;
         }
-        
-        console.log('Setting stats:', stats);
         setStats(stats);
         
         // Update selected user with fresh data if one was selected
@@ -101,29 +83,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
           setSelectedUser(updatedSelectedUser || null);
         }
       } else {
-        const errorText = await response.text();
-        console.error('API Error:', response.status, errorText);
-        // Установить базовые значения при ошибке API
-        setStats({ total_users: 0, total_leads: 0, total_audios: 0 });
-        setUsers([]);
+        toast({
+          title: 'Ошибка загрузки',
+          description: 'Не удалось загрузить данные администратора',
+          variant: 'destructive'
+        });
       }
     } catch (error) {
-      console.error('Network Error:', error);
-      
-      // Retry up to 3 times with delay
-      if (retryCount < 3) {
-        console.log(`Retrying in 2 seconds... (${retryCount + 1}/3)`);
-        setTimeout(() => loadAdminData(retryCount + 1), 2000);
-        return;
-      }
-      
-      // После всех попыток - установить реальные данные из базы
-      setStats({ total_users: 7, total_leads: 43, total_audios: 43 });
-      setUsers([]);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось загрузить данные',
+        variant: 'destructive'
+      });
     } finally {
-      if (retryCount >= 3 || retryCount === 0) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
@@ -145,10 +118,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         const audioUrl = data.audio_url || data.video_url;
         if (audioUrl) {
           setAudioUrl(audioUrl);
+        } else {
+          toast({
+            title: 'Аудио не найдено',
+            description: 'Аудио для этого лида не существует',
+            variant: 'destructive'
+          });
         }
       }
     } catch (error) {
-      console.error('Ошибка загрузки аудио:', error);
+      toast({
+        title: 'Ошибка загрузки аудио',
+        description: 'Не удалось загрузить аудио',
+        variant: 'destructive'
+      });
     } finally {
       setLoadingAudio(false);
     }
@@ -197,14 +180,31 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
           
           URL.revokeObjectURL(blobUrl);
           
-
+          toast({
+            title: 'Скачивание начато',
+            description: `Аудио "${leadTitle}" от ${userName} загружается`,
+          });
+        } else {
+          toast({
+            title: 'Аудио не найдено',
+            description: 'Аудио для этого лида не существует',
+            variant: 'destructive'
+          });
         }
       } else {
         const errorData = await response.json();
-        console.error('Ошибка доступа:', errorData.error);
+        toast({
+          title: 'Ошибка доступа',
+          description: errorData.error || 'Не удалось получить аудио',
+          variant: 'destructive'
+        });
       }
     } catch (error) {
-      console.error('Ошибка скачивания аудио:', error);
+      toast({
+        title: 'Ошибка скачивания',
+        description: 'Не удалось скачать аудио',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -224,7 +224,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         const data = await response.json();
         
         if (data.success) {
-
+          toast({
+            title: '✅ Лид удален',
+            description: `Лид "${leadTitle}" успешно удален из системы`,
+          });
           
           // Reload admin data to refresh the UI (selectedUser will be updated automatically)
           await loadAdminData();
@@ -236,7 +239,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         throw new Error(errorData.error || 'Network error');
       }
     } catch (error) {
-      console.error('Ошибка удаления лида:', error);
+      toast({
+        title: 'Ошибка удаления',
+        description: `Не удалось удалить лид: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
+        variant: 'destructive'
+      });
     } finally {
       setDeletingLeadId(null);
     }
@@ -263,6 +270,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         const data = await response.json();
         
         if (data.success) {
+          toast({
+            title: '✅ Пользователь удален',
+            description: `Пользователь "${userName}" и все его данные удалены из системы`,
+          });
+          
           // Clear selected user if it was deleted
           if (selectedUser && selectedUser.id === userId) {
             setSelectedUser(null);
@@ -278,7 +290,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         throw new Error(errorData.error || 'Network error');
       }
     } catch (error) {
-      console.error('Ошибка удаления пользователя:', error);
+      toast({
+        title: 'Ошибка удаления',
+        description: `Не удалось удалить пользователя: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
+        variant: 'destructive'
+      });
     } finally {
       setDeletingUserId(null);
     }
@@ -310,7 +326,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         const data = await response.json();
         
         if (data.success) {
-
+          toast({
+            title: '✅ Имя пользователя изменено',
+            description: `Имя изменено с "${data.user.old_name}" на "${data.user.name}"`,
+          });
           
           // Reload admin data to refresh the UI
           await loadAdminData();
@@ -322,7 +341,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         throw new Error(errorData.error || 'Network error');
       }
     } catch (error) {
-
+      toast({
+        title: 'Ошибка редактирования',
+        description: `Не удалось изменить имя пользователя: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
+        variant: 'destructive'
+      });
     } finally {
       setEditingUserId(null);
     }
@@ -332,11 +355,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
     const leadsWithAudio = user.leads.filter(l => l.has_audio || l.audio_filename || l.video_filename);
     
     if (leadsWithAudio.length === 0) {
-
+      toast({
+        title: 'Нет аудиозаписей',
+        description: 'У этого пользователя нет аудиозаписей для скачивания',
+        variant: 'destructive'
+      });
       return;
     }
 
-
+    toast({
+      title: `Скачивание ${leadsWithAudio.length} аудиозаписей`,
+      description: `Начинаем скачивание всех аудио пользователя ${user.name}`,
+    });
 
     for (const lead of leadsWithAudio) {
       try {
@@ -363,8 +393,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
   const handleCSVExport = () => {
     try {
       downloadCSV(users);
+      toast({
+        title: '✅ CSV скачан',
+        description: 'Файл с данными всех лидов успешно скачан',
+      });
     } catch (error) {
-      console.error('CSV export error:', error);
+      toast({
+        title: 'Ошибка экспорта',
+        description: 'Не удалось создать CSV файл',
+        variant: 'destructive'
+      });
     }
   };
 

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 interface TestResult {
   test: string;
@@ -20,6 +21,7 @@ export const AndroidVideoTest: React.FC = () => {
   ]);
   const [isRunning, setIsRunning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { toast } = useToast();
 
   const updateTest = (index: number, update: Partial<TestResult>) => {
     setTests(prev => prev.map((test, i) => i === index ? { ...test, ...update } : test));
@@ -247,7 +249,17 @@ export const AndroidVideoTest: React.FC = () => {
       // Test 5: Chunked Upload
       await testChunkedUpload(4);
 
+      toast({
+        title: 'Tests Complete',
+        description: 'All Android video tests finished',
+      });
+
     } catch (error: any) {
+      toast({
+        title: 'Test Suite Error',
+        description: error.message,
+        variant: 'destructive'
+      });
     } finally {
       setIsRunning(false);
     }
