@@ -1,13 +1,12 @@
 {
-  "tests": [
-    {
-      "name": "Access denied without token",
-      "method": "GET",
-      "expectedStatus": 401,
-      "expectedBody": {
-        "error": "Authentication token required"
-      },
-      "bodyMatcher": "partial"
-    }
-  ]
+  "tests": [{
+    "name": "Test admin API without auth",
+    "method": "GET",
+    "path": "/",
+    "expectedStatus": 401,
+    "expectedBody": {
+      "error": "string"
+    },
+    "bodyMatcher": "partial"
+  }]
 }

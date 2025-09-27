@@ -13,8 +13,6 @@ interface AdminStatsCardsProps {
 }
 
 const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ stats }) => {
-  console.log('AdminStatsCards received stats:', stats);
-  
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
       <Card>
@@ -46,7 +44,7 @@ const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ stats }) => {
           <div className="flex items-center">
             <Icon name="Volume2" size={24} className="text-red-500 mr-3" />
             <div>
-              <p className="text-2xl font-bold">{stats.total_audios} <span className="text-xs text-gray-500">({JSON.stringify(stats)})</span></p>
+              <p className="text-2xl font-bold">{stats.total_audios}</p>
               <p className="text-sm text-muted-foreground">Аудиозаписей</p>
             </div>
           </div>

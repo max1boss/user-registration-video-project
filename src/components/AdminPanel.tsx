@@ -65,11 +65,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Admin API response data:', data);
-        console.log('Statistics from API:', data.statistics);
         const newUsers = data.users || [];
         setUsers(newUsers);
-        setStats(data.statistics || { total_users: 0, total_leads: 0, total_audios: 0 });
+        const stats = data.statistics || { total_users: 0, total_leads: 0, total_audios: 0 };
+        // Совместимость с разными названиями полей
+        if (stats.total_videos !== undefined && stats.total_audios === undefined) {
+          stats.total_audios = stats.total_videos;
+        }
+        setStats(stats);
         
         // Update selected user with fresh data if one was selected
         if (selectedUser) {
