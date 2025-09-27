@@ -57,10 +57,10 @@ const UploadPage: React.FC<UploadPageProps> = ({ progress, isComplete, onNewLead
               
               <div className="space-y-2">
                 <h2 className="text-xl font-semibold text-gray-800">
-                  Лид отправлен
+                  Видео отправлено!
                 </h2>
                 <p className="text-sm text-gray-600">
-                  Видео и комментарии успешно сохранены
+                  Ваше видео успешно загружено и сохранено
                 </p>
               </div>
 
@@ -68,8 +68,8 @@ const UploadPage: React.FC<UploadPageProps> = ({ progress, isComplete, onNewLead
                 onClick={onNewLead}
                 className="w-full h-12 text-base font-medium"
               >
-                <Icon name="Plus" size={18} className="mr-2" />
-                Новый лид
+                <Icon name="Video" size={18} className="mr-2" />
+                Записать еще видео
               </Button>
             </div>
           )}

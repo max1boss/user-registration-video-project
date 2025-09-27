@@ -95,35 +95,57 @@ export const useLeadUploadHandler = ({
           throw new Error('Base64 conversion failed');
         }
         
-        const comments = `Родитель: ${leadData.parentName}, Ребенок: ${leadData.childName}, Возраст: ${leadData.age}, Телефон: ${leadData.phone}`;
+        // Create simple title and comments for video-only uploads
+        const title = leadData.parentName || `Видео заявка от ${new Date().toLocaleDateString('ru-RU')}`;
+        const comments = leadData.parentName ? 
+          `Родитель: ${leadData.parentName}, Ребенок: ${leadData.childName}, Возраст: ${leadData.age}, Телефон: ${leadData.phone}` :
+          `Видео файл размером ${(videoBlob.size / (1024 * 1024)).toFixed(1)}МБ`;
         
         console.log('Starting POST request to:', apiUrls.leads);
         console.log('Token length:', token.length);
+        console.log('Title:', title);
         console.log('Comments:', comments);
         console.log('Base64 video length:', base64Video.length);
         
-        // Check file size limits
+        // Check file size limits (updated for 200MB)
         const videoSizeMB = videoBlob.size / (1024 * 1024);
         const base64SizeMB = (base64Video.length * 3) / (4 * 1024 * 1024); // base64 is ~33% larger
         console.log('Video blob size:', videoBlob.size, 'bytes (', videoSizeMB.toFixed(2), 'MB)');
         console.log('Base64 size estimate:', base64SizeMB.toFixed(2), 'MB');
         
-        // Warn if approaching limits
-        if (videoSizeMB > 8) {
-          console.warn('Video size approaching Cloud Function limits!');
+        // Warn if approaching 200MB limit
+        if (videoSizeMB > 180) {
+          console.warn('Video size approaching 200MB limit!');
           toast({ 
-            title: '⚠️ Большой размер видео', 
-            description: `Размер: ${videoSizeMB.toFixed(1)}MB. Это может вызвать проблемы с загрузкой.`, 
+            title: '⚠️ Очень большой размер видео', 
+            description: `Размер: ${videoSizeMB.toFixed(1)}MB. Максимум: 200MB`, 
             variant: 'destructive' 
+          });
+        } else if (videoSizeMB > 50) {
+          console.log('Large video file detected');
+          toast({ 
+            title: '📹 Большое видео', 
+            description: `Загружаем ${videoSizeMB.toFixed(1)}MB - это займет время`, 
+            variant: 'default' 
           });
         }
         
+        // Detect video format from blob type
+        let contentType = 'video/mp4';
+        let filename = 'recording.mp4';
+        
+        if (videoBlob.type) {
+          contentType = videoBlob.type;
+          const extension = videoBlob.type.includes('webm') ? 'webm' : 'mp4';
+          filename = `recording.${extension}`;
+        }
+        
         const requestBody = {
-          title: `Лид от ${new Date().toLocaleDateString('ru-RU')}`,
+          title: title,
           comments: comments,
           video_data: base64Video,
-          video_filename: 'recording.mp4',
-          video_content_type: 'video/mp4'
+          video_filename: filename,
+          video_content_type: contentType
         };
         
         console.log('Request body keys:', Object.keys(requestBody));
@@ -154,6 +176,13 @@ export const useLeadUploadHandler = ({
         }
         
         if (response.ok && data.success) {
+          // Show success message
+          toast({
+            title: '✅ Видео отправлено!',
+            description: data.message || `Видео успешно загружено (${videoSizeMB.toFixed(1)}MB)`,
+            variant: 'default'
+          });
+          
           // Reload leads
           await onLoadLeads(token);
         } else {

@@ -131,17 +131,36 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             video_filename = body_data.get('video_filename', 'recording.mp4')
             video_content_type = body_data.get('video_content_type', 'video/mp4')
             
-            if not title or not comments or not video_base64:
+            # Allow video-only uploads (for new video recorder)
+            if not video_base64:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                     'isBase64Encoded': False,
-                    'body': json.dumps({'error': 'Missing required fields'})
+                    'body': json.dumps({'error': 'Video data required'})
                 }
+            
+            # Set defaults for video-only uploads
+            if not title:
+                title = 'Видео заявка'
+            if not comments:
+                comments = f'Видео файл: {video_filename}'
             
             # Decode base64 video data
             try:
                 video_data = base64.b64decode(video_base64)
+                video_size_mb = len(video_data) / (1024 * 1024)
+                print(f"Video data size: {video_size_mb:.2f} MB")
+                
+                # Check file size limit (200MB)
+                if video_size_mb > 200:
+                    return {
+                        'statusCode': 413,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'isBase64Encoded': False,
+                        'body': json.dumps({'error': f'Video file too large: {video_size_mb:.1f}MB. Maximum allowed: 200MB'})
+                    }
+                
             except Exception as e:
                 return {
                     'statusCode': 400,
@@ -178,7 +197,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({
                     'success': True,
                     'lead_id': lead_id,
-                    'created_at': format_moscow_time(created_at)
+                    'created_at': format_moscow_time(created_at),
+                    'video_size_mb': round(video_size_mb, 2),
+                    'message': f'Видео успешно загружено ({video_size_mb:.1f}MB)'
                 })
             }
         
