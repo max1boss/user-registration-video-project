@@ -3,5 +3,5 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './index.css'
 
-// Cache cleared: added Excel export function - v6
+// Cache cleared: working CSV export without external hooks - v7
 createRoot(document.getElementById("root")!).render(<App />);

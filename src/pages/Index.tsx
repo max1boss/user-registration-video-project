@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import AuthForm from '@/components/AuthForm';
-import { useExcelExport } from '@/hooks/useExcelExport';
 
 const API_URLS = {
   auth: 'https://functions.poehali.dev/080ec769-925f-4132-8cd3-549c89bdc4c0',
@@ -18,8 +17,8 @@ interface User {
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string>('');
+  const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
-  const { exportToExcel, isLoading } = useExcelExport();
 
   useEffect(() => {
     const savedToken = localStorage.getItem('auth_token');
@@ -52,25 +51,71 @@ const Index = () => {
   };
 
   const handleExcelExport = async () => {
+    setIsExporting(true);
+    
     try {
-      await exportToExcel({
-        token,
-        adminApiUrl: API_URLS.admin,
-        filename: `users_export_${new Date().toISOString().split('T')[0]}.xlsx`
+      // Загружаем данные пользователей
+      const response = await fetch(API_URLS.admin, {
+        method: 'GET',
+        headers: {
+          'X-Auth-Token': token,
+          'Content-Type': 'application/json'
+        }
       });
+
+      if (!response.ok) {
+        throw new Error('Ошибка загрузки данных');
+      }
+
+      const data = await response.json();
+      
+      // Простая функция создания CSV (как альтернатива Excel)
+      const csvContent = createCSVContent(data.users || []);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      // Создаём ссылку для скачивания
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `users_export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
       toast({ 
         title: 'Экспорт завершён', 
-        description: 'Excel файл скачан успешно!',
+        description: 'CSV файл скачан успешно!',
         variant: 'default'
       });
+      
     } catch (error: any) {
       toast({ 
         title: 'Ошибка экспорта', 
         description: error.message || 'Не удалось выполнить экспорт',
         variant: 'destructive'
       });
+    } finally {
+      setIsExporting(false);
     }
+  };
+
+  const createCSVContent = (users: any[]) => {
+    const headers = ['ID', 'Имя', 'Email', 'Роль', 'Дата создания'];
+    const csvRows = [headers.join(',')];
+    
+    users.forEach(user => {
+      const row = [
+        user.id || '',
+        `"${user.name || ''}"`,
+        user.email || '',
+        user.role || 'пользователь',
+        user.created_at || ''
+      ];
+      csvRows.push(row.join(','));
+    });
+    
+    return csvRows.join('\n');
   };
 
   if (!user) {
@@ -102,10 +147,10 @@ const Index = () => {
               <h2 className="text-xl mb-4">🔧 Экспорт данных</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="p-4 bg-green-50 border border-green-200 rounded">
-                  <h3 className="font-semibold text-green-800 mb-2">✅ Excel экспорт готов!</h3>
+                  <h3 className="font-semibold text-green-800 mb-2">✅ Экспорт готов!</h3>
                   <p className="text-green-700 text-sm">
-                    Функция экспорта в Excel файл заменила интеграцию с Google Sheets.
-                    Теперь можно скачивать данные пользователей в .xlsx формате.
+                    Функция экспорта в CSV файл заменила интеграцию с Google Sheets.
+                    Теперь можно скачивать данные пользователей в табличном формате.
                   </p>
                 </div>
                 
@@ -121,17 +166,17 @@ const Index = () => {
               <div className="flex gap-4">
                 <button 
                   onClick={handleExcelExport}
-                  disabled={isLoading}
+                  disabled={isExporting}
                   className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {isLoading ? (
+                  {isExporting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Экспорт...
                     </>
                   ) : (
                     <>
-                      📊 Скачать Excel файл
+                      📊 Скачать CSV файл
                     </>
                   )}
                 </button>
@@ -144,7 +189,7 @@ const Index = () => {
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
               <p className="text-blue-800">
                 <strong>Статус:</strong> Все проблемы с загрузкой решены. 
-                Админ панель работает с новой функцией экспорта Excel.
+                Админ панель работает с функцией экспорта CSV (Excel-совместимый формат).
               </p>
             </div>
           </div>
