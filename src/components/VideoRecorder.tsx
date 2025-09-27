@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import Icon from '@/components/ui/icon';
 import { LeadFormData } from '@/types/lead';
+
+// Декомпозированные компоненты
+import CameraPermissionScreen from './video/CameraPermissionScreen';
+import CameraView from './video/CameraView';
+import RecordingInfo from './video/RecordingInfo';
+import RecordingControls from './video/RecordingControls';
+import PreviewMode from './video/PreviewMode';
 
 interface VideoRecorderProps {
   onSaveLead: (videoBlob: Blob, leadData: LeadFormData) => Promise<void>;
@@ -17,6 +21,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   uploadProgress,
   uploadStatus
 }) => {
+  // Состояние записи
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
@@ -27,6 +32,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [currentCamera, setCurrentCamera] = useState<'user' | 'environment'>('user');
 
+  // Рефы для управления записью
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -38,18 +44,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   const MAX_SIZE_MB = 200; // 200 МБ
   const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 MB';
-    const mb = bytes / (1024 * 1024);
-    return `${mb.toFixed(1)} MB`;
-  };
-
+  // Очистка ресурсов при размонтировании
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -61,11 +56,11 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     };
   }, []);
 
+  // Запрос доступа к камере
   const requestCameraAccess = async () => {
     try {
       setError(null);
       
-      // Оптимальные настройки для мобильных устройств
       const constraints = {
         video: {
           facingMode: currentCamera,
@@ -97,6 +92,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     }
   };
 
+  // Начало записи
   const startRecording = async () => {
     if (!streamRef.current) return;
 
@@ -178,6 +174,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     }
   };
 
+  // Пауза записи
   const pauseRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.pause();
@@ -188,6 +185,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     }
   };
 
+  // Возобновление записи
   const resumeRecording = () => {
     if (mediaRecorderRef.current && isPaused) {
       mediaRecorderRef.current.resume();
@@ -207,6 +205,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     }
   };
 
+  // Остановка записи
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
@@ -219,6 +218,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     }
   };
 
+  // Переснять видео
   const retakeVideo = () => {
     if (recordedVideo) {
       URL.revokeObjectURL(recordedVideo);
@@ -231,6 +231,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     chunksRef.current = [];
   };
 
+  // Сохранение видео
   const handleSaveVideo = async () => {
     if (!recordedVideo || chunksRef.current.length === 0) return;
 
@@ -256,6 +257,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     }
   };
 
+  // Переключение камеры
   const switchCamera = async () => {
     if (!streamRef.current) return;
     
@@ -295,125 +297,50 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     }
   };
 
-  // Прогресс времени записи
-  const timeProgress = (recordingTime / MAX_DURATION) * 100;
-  const sizeProgress = (videoSize / MAX_SIZE_BYTES) * 100;
-
+  // Экран запроса разрешений
   if (!hasVideoAccess) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 space-y-6">
-        <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
-          <Icon name="Video" size={40} className="text-blue-600" />
-        </div>
-        
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold mb-3">Видеозапись</h2>
-          <p className="text-gray-600 mb-2">
-            📹 Записывайте видео до <strong>5 минут</strong>
-          </p>
-          <p className="text-gray-600 mb-6">
-            💾 Максимальный размер <strong>200МБ</strong>
-          </p>
-          
-          <Button onClick={requestCameraAccess} size="lg" className="w-full">
-            <Icon name="Camera" size={20} className="mr-2" />
-            Включить камеру
-          </Button>
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md w-full">
-            <div className="flex items-center">
-              <Icon name="AlertCircle" size={20} className="text-red-500 mr-2 flex-shrink-0" />
-              <p className="text-red-700 text-sm">{error}</p>
-            </div>
-          </div>
-        )}
-      </div>
+      <CameraPermissionScreen 
+        error={error}
+        onRequestAccess={requestCameraAccess}
+      />
     );
   }
 
+  // Основной интерфейс записи
   return (
     <div className="max-w-lg mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
       {/* Видео превью */}
-      <div className="relative aspect-video bg-black">
-        <video
-          ref={videoRef}
-          className="w-full h-full object-cover"
-          playsInline
-          muted={!isPreviewMode}
-          style={{ transform: isPreviewMode ? 'none' : (currentCamera === 'user' ? 'scaleX(-1)' : 'none') }}
+      <div className="relative">
+        <CameraView
+          videoRef={videoRef}
+          recordedVideo={recordedVideo}
+          isPreviewMode={isPreviewMode}
+          isRecording={isRecording}
+          isPaused={isPaused}
+          currentCamera={currentCamera}
+          onSwitchCamera={switchCamera}
         />
         
-        {/* Видео для воспроизведения записи */}
-        {recordedVideo && isPreviewMode && (
-          <video
-            src={recordedVideo}
-            controls
-            className="w-full h-full object-cover absolute inset-0"
-          />
-        )}
-        
-        {/* Индикатор записи */}
-        {isRecording && (
-          <div className="absolute top-4 left-4 flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${isPaused ? 'bg-yellow-500' : 'bg-red-500'} ${!isPaused && 'animate-pulse'}`} />
-            <span className="text-white text-sm font-medium bg-black/70 px-3 py-1 rounded-full">
-              {isPaused ? 'ПАУЗА' : 'ЗАПИСЬ'}
-            </span>
-          </div>
-        )}
-
-        {/* Переключатель камеры */}
-        {!isRecording && !isPreviewMode && (
-          <button
-            onClick={switchCamera}
-            className="absolute top-4 right-4 w-12 h-12 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
-          >
-            <Icon name="RotateCcw" size={24} />
-          </button>
-        )}
-
-        {/* Информация о записи */}
-        {(isRecording || isPaused) && (
-          <div className="absolute bottom-4 left-4 right-4">
-            <div className="bg-black/80 rounded-lg p-4 space-y-3">
-              <div className="flex justify-between text-white text-sm">
-                <span className="font-medium">{formatTime(recordingTime)} / {formatTime(MAX_DURATION)}</span>
-                <span className="font-medium">{formatFileSize(videoSize)} / {MAX_SIZE_MB}MB</span>
-              </div>
-              
-              {/* Прогресс времени */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-gray-300">
-                  <span>Время</span>
-                  <span>{Math.round(timeProgress)}%</span>
-                </div>
-                <Progress value={timeProgress} className="h-2" />
-              </div>
-              
-              {/* Прогресс размера */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-gray-300">
-                  <span>Размер</span>
-                  <span>{Math.round(sizeProgress)}%</span>
-                </div>
-                <Progress 
-                  value={sizeProgress} 
-                  className={`h-2 ${sizeProgress > 80 ? 'bg-red-200' : ''}`}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Информация о записи - поверх видео */}
+        <RecordingInfo
+          isRecording={isRecording}
+          isPaused={isPaused}
+          recordingTime={recordingTime}
+          videoSize={videoSize}
+          maxDuration={MAX_DURATION}
+          maxSizeBytes={MAX_SIZE_BYTES}
+          maxSizeMB={MAX_SIZE_MB}
+        />
       </div>
 
-      {/* Управление записью */}
+      {/* Управление */}
       <div className="p-6">
+        {/* Отображение ошибок */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
             <div className="flex items-center">
-              <Icon name="AlertCircle" size={16} className="text-red-500 mr-2 flex-shrink-0" />
+              <div className="w-4 h-4 text-red-500 mr-2 flex-shrink-0">⚠️</div>
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           </div>
@@ -421,86 +348,26 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
 
         {isPreviewMode ? (
           // Режим превью
-          <div className="space-y-4">
-            <div className="text-center">
-              <h3 className="font-semibold text-lg mb-2">Видео готово!</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Длительность: {formatTime(recordingTime)} • Размер: {formatFileSize(videoSize)}
-              </p>
-            </div>
-            
-            <div className="flex space-x-3">
-              <Button variant="outline" onClick={retakeVideo} className="flex-1">
-                <Icon name="RotateCcw" size={16} className="mr-2" />
-                Переснять
-              </Button>
-              
-              <Button 
-                onClick={handleSaveVideo} 
-                disabled={isUploading}
-                className="flex-1"
-              >
-                {isUploading ? (
-                  <>
-                    <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
-                    Отправка...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="Send" size={16} className="mr-2" />
-                    Отправить
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {/* Прогресс загрузки */}
-            {isUploading && (
-              <div className="space-y-2">
-                <Progress value={uploadProgress} className="w-full" />
-                <p className="text-sm text-gray-600 text-center">{uploadStatus}</p>
-              </div>
-            )}
-          </div>
+          <PreviewMode
+            recordingTime={recordingTime}
+            videoSize={videoSize}
+            isUploading={isUploading}
+            uploadProgress={uploadProgress}
+            uploadStatus={uploadStatus}
+            onRetake={retakeVideo}
+            onSave={handleSaveVideo}
+          />
         ) : (
           // Режим записи
-          <div className="space-y-4">
-            {!isRecording ? (
-              <Button 
-                onClick={startRecording} 
-                size="lg"
-                className="w-full h-14 text-lg"
-              >
-                <Icon name="Video" size={24} className="mr-3" />
-                Начать запись
-              </Button>
-            ) : (
-              <div className="flex space-x-3">
-                {isPaused ? (
-                  <Button onClick={resumeRecording} size="lg" variant="outline" className="flex-1">
-                    <Icon name="Play" size={20} className="mr-2" />
-                    Продолжить
-                  </Button>
-                ) : (
-                  <Button onClick={pauseRecording} size="lg" variant="outline" className="flex-1">
-                    <Icon name="Pause" size={20} className="mr-2" />
-                    Пауза
-                  </Button>
-                )}
-                
-                <Button onClick={stopRecording} size="lg" className="flex-1">
-                  <Icon name="Square" size={20} className="mr-2" />
-                  Остановить
-                </Button>
-              </div>
-            )}
-            
-            {/* Подсказки */}
-            <div className="text-center text-sm text-gray-500 space-y-1">
-              <p>💡 Поверните телефон горизонтально для лучшего качества</p>
-              <p>🔄 Нажмите на иконку сверху для переключения камеры</p>
-            </div>
-          </div>
+          <RecordingControls
+            isRecording={isRecording}
+            isPaused={isPaused}
+            isPreviewMode={isPreviewMode}
+            onStartRecording={startRecording}
+            onPauseRecording={pauseRecording}
+            onResumeRecording={resumeRecording}
+            onStopRecording={stopRecording}
+          />
         )}
       </div>
     </div>
