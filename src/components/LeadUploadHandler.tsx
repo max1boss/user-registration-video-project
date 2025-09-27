@@ -2,7 +2,7 @@ import React from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { ChunkedUploader } from '@/utils/chunkedUpload';
 import { LeadFormData } from '@/types/lead';
-import { GoogleSheetsExporter } from '@/utils/googleSheetsExporter';
+import { GoogleSheetsExporter } from '@/utils/googleSheetsExport';
 
 interface LeadUploadHandlerProps {
   token: string;
