@@ -69,15 +69,20 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         conn = psycopg2.connect(database_url)
         cursor = conn.cursor()
         
-        # Get all leads with user information
+        # Check if this is a full export (manual) or auto-export (add only new)
+        query_params = event.get('queryStringParameters') or {}
+        auto_export = query_params.get('auto', '').lower() == 'true'
+        
+        # Get leads with user information
+        # Note: using video_leads table since that's where the actual data is stored
         cursor.execute("""
             SELECT 
-                l.parent_name,
-                l.child_name, 
-                l.child_age,
-                l.phone,
-                u.username
-            FROM leads l
+                l.title as parent_name,
+                l.comments as child_info,
+                '' as child_age,
+                '' as phone,
+                u.name as username
+            FROM video_leads l
             JOIN users u ON l.user_id = u.id
             ORDER BY l.created_at DESC
         """)
@@ -93,44 +98,69 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({'message': 'No leads data to export', 'exported_count': 0})
             }
         
-        # Prepare data for Google Sheets
-        # Header row
-        values = [['Имя родителя', 'Имя ребенка', 'Возраст ребенка', 'Телефон', 'Имя пользователя']]
-        
-        # Add leads data
-        for lead in leads_data:
-            parent_name, child_name, child_age, phone, username = lead
-            values.append([
+        if auto_export and leads_data:
+            # Auto-export: добавляем только последний лид
+            latest_lead = leads_data[0]  # Leads sorted by created_at DESC
+            parent_name, child_info, child_age, phone, username = latest_lead
+            
+            # Добавляем в конец таблицы
+            new_row = [
                 parent_name or '',
-                child_name or '',
+                child_info or '',
                 str(child_age) if child_age else '',
                 phone or '',
                 username or ''
-            ])
-        
-        # Clear existing data and write new data
-        # First clear the sheet
-        clear_request = {
-            'range': 'A:E'
-        }
-        service.spreadsheets().values().clear(
-            spreadsheetId=spreadsheet_id,
-            range='A:E'
-        ).execute()
-        
-        # Write new data
-        body = {
-            'values': values
-        }
-        
-        result = service.spreadsheets().values().update(
-            spreadsheetId=spreadsheet_id,
-            range='A1:E' + str(len(values)),
-            valueInputOption='RAW',
-            body=body
-        ).execute()
-        
-        updated_cells = result.get('updatedCells', 0)
+            ]
+            
+            body = {
+                'values': [new_row]
+            }
+            
+            result = service.spreadsheets().values().append(
+                spreadsheetId=spreadsheet_id,
+                range='A:E',
+                valueInputOption='RAW',
+                insertDataOption='INSERT_ROWS',
+                body=body
+            ).execute()
+            
+            updated_cells = result.get('updates', {}).get('updatedCells', 0)
+            
+        else:
+            # Полный экспорт: перезаписываем всю таблицу
+            # Header row
+            values = [['Имя родителя', 'Информация о ребенке', 'Возраст ребенка', 'Телефон', 'Имя пользователя']]
+            
+            # Add leads data
+            for lead in leads_data:
+                parent_name, child_info, child_age, phone, username = lead
+                values.append([
+                    parent_name or '',
+                    child_info or '',
+                    str(child_age) if child_age else '',
+                    phone or '',
+                    username or ''
+                ])
+            
+            # Clear existing data and write new data
+            service.spreadsheets().values().clear(
+                spreadsheetId=spreadsheet_id,
+                range='A:E'
+            ).execute()
+            
+            # Write new data
+            body = {
+                'values': values
+            }
+            
+            result = service.spreadsheets().values().update(
+                spreadsheetId=spreadsheet_id,
+                range='A1:E' + str(len(values)),
+                valueInputOption='RAW',
+                body=body
+            ).execute()
+            
+            updated_cells = result.get('updatedCells', 0)
         
         return {
             'statusCode': 200,

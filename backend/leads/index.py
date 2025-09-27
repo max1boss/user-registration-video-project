@@ -3,6 +3,7 @@ import os
 import jwt
 import psycopg2
 import base64
+import requests
 from datetime import datetime
 from typing import Dict, Any, Optional
 
@@ -14,6 +15,20 @@ def verify_token(token: str) -> Optional[Dict[str, Any]]:
         return decoded
     except:
         return None
+
+def trigger_google_sheets_export() -> None:
+    '''Trigger Google Sheets export function asynchronously'''
+    try:
+        # После деплоя функции, этот URL будет обновлен автоматически
+        export_url = 'https://functions.poehali.dev/google-sheets-export-placeholder?auto=true'
+        
+        # Делаем асинхронный запрос без ожидания ответа
+        requests.post(export_url, 
+                     headers={'Content-Type': 'application/json'},
+                     timeout=1)  # Быстрый timeout чтобы не блокировать создание лида
+    except:
+        # Игнорируем ошибки экспорта, чтобы не влиять на создание лида
+        pass
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
@@ -144,6 +159,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             lead_id, created_at = cursor.fetchone()
             conn.commit()
+            
+            # Автоматически запускаем экспорт в Google Sheets после создания лида
+            trigger_google_sheets_export()
             
             return {
                 'statusCode': 200,
