@@ -5,6 +5,22 @@ import psycopg2
 import base64
 from datetime import datetime
 from typing import Dict, Any, Optional
+import pytz
+
+def format_moscow_time(dt: datetime) -> str:
+    '''Convert UTC datetime to Moscow timezone and format'''
+    if not dt:
+        return ''
+    
+    # If datetime is timezone-naive, assume it's UTC
+    if dt.tzinfo is None:
+        dt = pytz.UTC.localize(dt)
+    
+    # Convert to Moscow timezone
+    moscow_tz = pytz.timezone('Europe/Moscow')
+    moscow_time = dt.astimezone(moscow_tz)
+    
+    return moscow_time.strftime('%d.%m.%Y %H:%M')
 
 def verify_token(token: str) -> Optional[Dict[str, Any]]:
     '''Verify JWT token and return user data'''
@@ -93,7 +109,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'comments': comments,
                     'video_filename': filename,
                     'video_content_type': content_type,
-                    'created_at': created_at.strftime('%d.%m.%Y %H:%M') if created_at else '',
+                    'created_at': format_moscow_time(created_at),
                     'video_url': f'/backend/leads/video/{lead_id}'  # URL to get video data
                 })
             
@@ -162,7 +178,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({
                     'success': True,
                     'lead_id': lead_id,
-                    'created_at': created_at.strftime('%d.%m.%Y %H:%M')
+                    'created_at': format_moscow_time(created_at)
                 })
             }
         
