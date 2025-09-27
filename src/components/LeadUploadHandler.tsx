@@ -3,8 +3,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ChunkedUploader } from '@/utils/chunkedUpload';
 import { LeadFormData } from '@/types/lead';
 
-// Updated: removed Google Sheets integration
-
 interface LeadUploadHandlerProps {
   token: string;
   apiUrls: {
@@ -22,8 +20,6 @@ export const useLeadUploadHandler = ({
   onLoadLeads 
 }: LeadUploadHandlerProps) => {
   const { toast } = useToast();
-
-
 
   const handleChunkedUpload = async (audioBlob: Blob, leadData: LeadFormData): Promise<void> => {
     const comments = `Родитель: ${leadData.parentName}, Ребенок: ${leadData.childName}, Возраст: ${leadData.age}, Телефон: ${leadData.phone}`;
@@ -47,7 +43,6 @@ export const useLeadUploadHandler = ({
         
         // Reload leads and cleanup
         await onLoadLeads(token);
-        
         setTimeout(() => {
           onProgress(undefined);
         }, 500);
