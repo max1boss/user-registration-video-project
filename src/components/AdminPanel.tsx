@@ -51,17 +51,37 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
   const [exportingToSheets, setExportingToSheets] = useState(false);
   const [showServiceAccountModal, setShowServiceAccountModal] = useState(false);
   const [serviceAccountKey, setServiceAccountKey] = useState<any>(null);
+  const [autoExportEnabled, setAutoExportEnabled] = useState(false);
   
   const { toast } = useToast();
 
   useEffect(() => {
     loadAdminData();
     loadServiceAccountKey();
+    loadAutoExportSetting();
   }, []);
 
   const loadServiceAccountKey = async () => {
     const key = await getServiceAccountKey();
     setServiceAccountKey(key);
+  };
+
+  const loadAutoExportSetting = () => {
+    const saved = localStorage.getItem('google_sheets_auto_export');
+    setAutoExportEnabled(saved === 'true');
+  };
+
+  const handleToggleAutoExport = (enabled: boolean) => {
+    setAutoExportEnabled(enabled);
+    localStorage.setItem('google_sheets_auto_export', enabled.toString());
+    
+    toast({
+      title: enabled ? '✅ Автоэкспорт включен' : '⚪ Автоэкспорт выключен',
+      description: enabled 
+        ? 'Новые лиды будут автоматически добавляться в Google Таблицы' 
+        : 'Автоматический экспорт отключен',
+      duration: 3000
+    });
   };
 
   const loadAdminData = async () => {
@@ -467,6 +487,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         onExportToSheets={exportToGoogleSheets}
         exportingToSheets={exportingToSheets}
         hasServiceAccount={!!serviceAccountKey}
+        autoExportEnabled={autoExportEnabled}
+        onToggleAutoExport={handleToggleAutoExport}
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

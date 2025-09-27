@@ -2,6 +2,7 @@ import React from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { ChunkedUploader } from '@/utils/chunkedUpload';
 import { LeadFormData } from '@/types/lead';
+import { GoogleSheetsExporter } from '@/utils/googleSheetsExporter';
 
 interface LeadUploadHandlerProps {
   token: string;
@@ -20,6 +21,43 @@ export const useLeadUploadHandler = ({
   onLoadLeads 
 }: LeadUploadHandlerProps) => {
   const { toast } = useToast();
+
+  const autoExportToGoogleSheets = async (leadData: LeadFormData) => {
+    try {
+      // Проверяем настройку автоэкспорта
+      const autoExportEnabled = localStorage.getItem('google_sheets_auto_export') === 'true';
+      if (!autoExportEnabled) {
+        console.log('Автоэкспорт выключен - пропускаем');
+        return;
+      }
+
+      const serviceAccountKey = localStorage.getItem('google_service_account_key');
+      if (!serviceAccountKey) {
+        console.log('Google Sheets не настроен - пропускаем автоэкспорт');
+        return;
+      }
+
+      const exporter = new GoogleSheetsExporter(serviceAccountKey);
+      await exporter.exportLead({
+        parentName: leadData.parentName,
+        childInfo: `${leadData.childName}, ${leadData.age} лет`,
+        phone: leadData.phone,
+        userName: 'Лид'
+      });
+
+      console.log('Лид автоматически экспортирован в Google Sheets');
+      
+      // Показываем ненавязчивое уведомление
+      toast({
+        title: '✅ Экспорт в Google Sheets',
+        description: 'Лид автоматически добавлен в таблицу',
+        duration: 3000
+      });
+    } catch (error) {
+      console.error('Ошибка автоэкспорта в Google Sheets:', error);
+      // Не показываем ошибку пользователю, чтобы не мешать основному процессу
+    }
+  };
 
   const handleChunkedUpload = async (audioBlob: Blob, leadData: LeadFormData): Promise<void> => {
     const comments = `Родитель: ${leadData.parentName}, Ребенок: ${leadData.childName}, Возраст: ${leadData.age}, Телефон: ${leadData.phone}`;
@@ -43,6 +81,10 @@ export const useLeadUploadHandler = ({
         
         // Reload leads and cleanup
         await onLoadLeads(token);
+        
+        // Auto-export to Google Sheets if configured
+        await autoExportToGoogleSheets(leadData);
+        
         setTimeout(() => {
           onProgress(undefined);
         }, 500);
@@ -161,6 +203,9 @@ export const useLeadUploadHandler = ({
         if (response.ok && data.success) {
           // Reload leads
           await onLoadLeads(token);
+          
+          // Auto-export to Google Sheets if configured
+          await autoExportToGoogleSheets(leadData);
         } else {
           toast({ 
             title: 'Ошибка сохранения', 

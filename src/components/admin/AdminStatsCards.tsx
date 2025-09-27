@@ -13,9 +13,11 @@ interface AdminStatsCardsProps {
   onExportToSheets?: () => void;
   exportingToSheets?: boolean;
   hasServiceAccount?: boolean;
+  autoExportEnabled?: boolean;
+  onToggleAutoExport?: (enabled: boolean) => void;
 }
 
-const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ stats, onExportToSheets, exportingToSheets, hasServiceAccount }) => {
+const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ stats, onExportToSheets, exportingToSheets, hasServiceAccount, autoExportEnabled, onToggleAutoExport }) => {
   return (
     <div className="space-y-4 mb-8">
       <div className="flex justify-between items-center">
@@ -29,9 +31,22 @@ const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ stats, onExportToShee
               </div>
             )}
             {hasServiceAccount && (
-              <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-lg">
-                <Icon name="CheckCircle" size={14} />
-                <span>Google Sheets настроен</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-lg">
+                  <Icon name="CheckCircle" size={14} />
+                  <span>Google Sheets настроен</span>
+                </div>
+                {onToggleAutoExport && (
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={autoExportEnabled || false}
+                      onChange={(e) => onToggleAutoExport(e.target.checked)}
+                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    />
+                    <span className="text-gray-700">Автоэкспорт новых лидов</span>
+                  </label>
+                )}
               </div>
             )}
             <button
