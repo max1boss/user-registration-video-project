@@ -170,7 +170,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
     
     // Check if this will be a chunked upload (lowered threshold for Android)
     const videoSizeMB = videoBlob.size / (1024 * 1024);
-    const isChunkedUpload = videoSizeMB > 3; // Lowered from 8MB to 3MB for Android compatibility
+    const isChunkedUpload = videoSizeMB > 2; // Lowered to 2MB for Android Chrome compatibility
     
     setUploadStatus(isChunkedUpload ? 
       `Большой файл (${videoSizeMB.toFixed(1)}MB) - загружаем по частям` : 

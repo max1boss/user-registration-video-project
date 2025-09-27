@@ -127,20 +127,51 @@ export const useLeadUploadHandler = ({
         
         console.log('Request body keys:', Object.keys(requestBody));
         
-        // Create fetch with extended timeout for long videos
+        // Create fetch with extended timeout and retry logic for Android
         const controller = new AbortController();
-        const timeout = videoSizeMB > 2 ? 300000 : 60000; // 5 minutes for videos >2MB, 1 minute for smaller
+        const timeout = videoSizeMB > 2 ? 600000 : 120000; // 10 minutes for videos >2MB, 2 minutes for smaller
         const timeoutId = setTimeout(() => controller.abort(), timeout);
         
-        const response = await fetch(apiUrls.leads, {
-          method: 'POST',
-          headers: {
-            'X-Auth-Token': token,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal
-        });
+        // Add retry logic for Android Chrome "failed to fetch" errors
+        let response;
+        let lastError;
+        
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            console.log(`Upload attempt ${attempt}/3`);
+            
+            response = await fetch(apiUrls.leads, {
+              method: 'POST',
+              headers: {
+                'X-Auth-Token': token,
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify(requestBody),
+              signal: controller.signal,
+              mode: 'cors',
+              credentials: 'omit'
+            });
+            
+            break; // Success, exit retry loop
+            
+          } catch (fetchError: any) {
+            lastError = fetchError;
+            console.error(`Fetch attempt ${attempt} failed:`, fetchError.message);
+            
+            if (attempt < 3) {
+              // Wait before retry - increasing delays for Android
+              const delay = attempt * 2000; // 2s, 4s delays
+              console.log(`Waiting ${delay}ms before retry...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
+          }
+        }
+        
+        if (!response) {
+          throw lastError || new Error('All fetch attempts failed');
+        }
         
         clearTimeout(timeoutId);
 
@@ -191,9 +222,9 @@ export const useLeadUploadHandler = ({
       let errorMessage = 'Не удалось сохранить лид';
       
       if (error.name === 'AbortError') {
-        errorMessage = 'Превышено время ожидания - видео слишком большое. Попробуйте записать короче или сжать видео';
-      } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        errorMessage = 'Ошибка сети - проверьте подключение к интернету';
+        errorMessage = 'Превышено время ожидания. Попробуйте записать короче или перезагрузите страницу';
+      } else if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
+        errorMessage = 'Ошибка сети. Проверьте интернет или попробуйте перезагрузить страницу';
       } else if (error.message.includes('Invalid JSON')) {
         errorMessage = 'Сервер вернул некорректный ответ';
       } else if (error.message.includes('timeout')) {
@@ -215,8 +246,8 @@ export const useLeadUploadHandler = ({
     const videoSizeMB = videoBlob.size / (1024 * 1024);
     console.log('Video file size:', videoSizeMB.toFixed(2), 'MB');
     
-    // Use chunked upload for files larger than 3MB for better Android compatibility
-    if (videoSizeMB > 3) {
+    // Use chunked upload for files larger than 2MB for better Android compatibility
+    if (videoSizeMB > 2) {
       console.log('Using chunked upload for large file');
       await handleChunkedUpload(videoBlob, leadData);
     } else {

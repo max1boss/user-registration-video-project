@@ -161,21 +161,51 @@ export class ChunkedUploader {
         const base64Chunk = await this.blobToBase64(chunk);
         const chunkHash = await this.calculateMD5(chunk);
 
-        const response = await fetch(this.options.uploadUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Auth-Token': this.options.token
-          },
-          body: JSON.stringify({
-            action: 'upload_chunk',
-            upload_id: this.uploadId,
-            chunk_index: chunkIndex,
-            chunk_data: base64Chunk,
-            chunk_hash: chunkHash
-          }),
-          signal: this.abortController?.signal
-        });
+        // Enhanced retry logic for chunk upload
+        let response;
+        let chunkError;
+        
+        for (let retryAttempt = 1; retryAttempt <= 3; retryAttempt++) {
+          try {
+            console.log(`Chunk ${chunkIndex} upload attempt ${retryAttempt}/3`);
+            
+            response = await fetch(this.options.uploadUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Auth-Token': this.options.token,
+                'Cache-Control': 'no-cache',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({
+                action: 'upload_chunk',
+                upload_id: this.uploadId,
+                chunk_index: chunkIndex,
+                chunk_data: base64Chunk,
+                chunk_hash: chunkHash
+              }),
+              signal: this.abortController?.signal,
+              mode: 'cors',
+              credentials: 'omit'
+            });
+            
+            break; // Success
+            
+          } catch (fetchError: any) {
+            chunkError = fetchError;
+            console.error(`Chunk ${chunkIndex} attempt ${retryAttempt} failed:`, fetchError.message);
+            
+            if (retryAttempt < 3) {
+              const delay = retryAttempt * 1500; // 1.5s, 3s delays
+              console.log(`Waiting ${delay}ms before chunk retry...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
+          }
+        }
+        
+        if (!response) {
+          throw chunkError || new Error(`Failed to upload chunk ${chunkIndex}`);
+        }
 
         if (!response.ok) {
           const error = await response.json();
