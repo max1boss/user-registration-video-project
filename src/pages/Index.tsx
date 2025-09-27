@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import AuthForm from '@/components/AuthForm';
+import AppHeader from '@/components/AppHeader';
+import AdminPanel from '@/components/AdminPanel';
 
 const API_URLS = {
   auth: 'https://functions.poehali.dev/080ec769-925f-4132-8cd3-549c89bdc4c0',
+  admin: 'https://functions.poehali.dev/bf64fc6c-c075-4df6-beb9-f5b527586fa1',
+  adminVideo: 'https://functions.poehali.dev/72f44b46-a11c-4ea3-addb-cb69aee5546e',
+  deleteUser: 'https://functions.poehali.dev/d99ce676-54d7-46f7-8738-a2dd9264061e',
+  editUser: 'https://functions.poehali.dev/d99ce676-54d7-46f7-8738-a2dd9264061e'
 };
 
 interface User {
@@ -57,42 +63,39 @@ const Index = () => {
     );
   }
 
+  // Admin interface
+  if (user.role === 'admin') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-success/5">
+        <AppHeader user={user} onLogout={handleLogout} />
+        <AdminPanel 
+          token={token}
+          adminApiUrl={API_URLS.admin}
+          videoApiUrl={API_URLS.adminVideo}
+          deleteUserApiUrl={API_URLS.deleteUser}
+          editUserApiUrl={API_URLS.editUser}
+        />
+      </div>
+    );
+  }
+
+  // Regular user interface
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-success/5">
+      <AppHeader user={user} onLogout={handleLogout} />
       <div className="container mx-auto px-4 py-6">
         <div className="max-w-2xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Добро пожаловать, {user.name}!</h1>
-            <button 
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-            >
-              Выйти
-            </button>
-          </div>
-          
           <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg mb-4">Статус пользователя</h2>
+            <h2 className="text-lg mb-4">Добро пожаловать, {user.name}!</h2>
             <p><strong>Email:</strong> {user.email}</p>
             <p><strong>Роль:</strong> {user.role || 'пользователь'}</p>
-            <p><strong>ID:</strong> {user.id}</p>
             
-            {user.role === 'admin' && (
-              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
-                <p className="text-yellow-800">
-                  🔧 Администраторская панель с Excel экспортом готова! 
-                  Функция заменила Google Sheets.
-                </p>
-              </div>
-            )}
-            
-            {user.role !== 'admin' && (
-              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-blue-800">
-                  📝 Пользовательские функции готовы к восстановлению.
-                </p>
-              </div>
-            )}
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-blue-800">
+                📝 Пользовательские функции временно недоступны.
+                Обратитесь к администратору.
+              </p>
+            </div>
           </div>
         </div>
       </div>
