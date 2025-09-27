@@ -150,6 +150,8 @@ const Index = () => {
   };
 
   const parseChildInfo = (comments: string) => {
+    console.log('Парсим комментарии:', comments);
+    
     // Функция для извлечения информации из структурированных комментариев лида
     let parentName = '';
     let childName = '';
@@ -157,31 +159,52 @@ const Index = () => {
     let phone = '';
     
     if (comments) {
-      // Ищем "Родитель: Имя"
-      const parentMatch = comments.match(/Родитель:\s*(.+?)(?:\n|$)/i);
+      // Попробуем разные варианты парсинга
+      
+      // Вариант 1: Ищем "Родитель: Имя" (с переносом строки)
+      const parentMatch = comments.match(/Родитель:\s*([^\n\r]+)/i);
       if (parentMatch) {
         parentName = parentMatch[1].trim();
       }
       
-      // Ищем "Ребенок: Имя"  
-      const childMatch = comments.match(/Ребенок:\s*(.+?)(?:\n|$)/i);
+      // Вариант 2: Ищем "Ребенок: Имя"  
+      const childMatch = comments.match(/Ребенок:\s*([^\n\r]+)/i);
       if (childMatch) {
         childName = childMatch[1].trim();
       }
       
-      // Ищем "Возраст: число"
-      const ageMatch = comments.match(/Возраст:\s*(.+?)(?:\n|$)/i);
+      // Вариант 3: Ищем "Возраст: число"
+      const ageMatch = comments.match(/Возраст:\s*([^\n\r]+)/i);
       if (ageMatch) {
         childAge = ageMatch[1].trim();
       }
       
-      // Ищем "Телефон: номер"
-      const phoneMatch = comments.match(/Телефон:\s*(.+?)(?:\n|$)/i);
+      // Вариант 4: Ищем "Телефон: номер"
+      const phoneMatch = comments.match(/Телефон:\s*([^\n\r]+)/i);
       if (phoneMatch) {
         phone = phoneMatch[1].trim();
       }
+      
+      // Если структурированный парсинг не сработал, попробуем альтернативный подход
+      if (!parentName && !childName && !childAge && !phone) {
+        // Возможно данные разделены запятыми или другими символами
+        const parts = comments.split(/[,\n\r]+/);
+        parts.forEach(part => {
+          const trimmed = part.trim();
+          if (trimmed.toLowerCase().includes('родитель')) {
+            parentName = trimmed.replace(/родитель:?\s*/i, '').trim();
+          } else if (trimmed.toLowerCase().includes('ребенок')) {
+            childName = trimmed.replace(/ребенок:?\s*/i, '').trim();
+          } else if (trimmed.toLowerCase().includes('возраст')) {
+            childAge = trimmed.replace(/возраст:?\s*/i, '').trim();
+          } else if (trimmed.toLowerCase().includes('телефон')) {
+            phone = trimmed.replace(/телефон:?\s*/i, '').trim();
+          }
+        });
+      }
     }
     
+    console.log('Результат парсинга:', { parentName, childName, childAge, phone });
     return { parentName, childName, childAge, phone };
   };
 
