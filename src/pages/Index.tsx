@@ -103,21 +103,75 @@ const Index = () => {
   };
 
   const createCSVContent = (users: any[]) => {
-    const headers = ['ID', 'Имя', 'Email', 'Роль', 'Дата создания'];
+    const headers = ['Имя пользователя', 'Имя родителя', 'Имя ребенка', 'Возраст ребенка', 'Телефон'];
     const csvRows = [headers.join(';')]; // Используем ; как разделитель для русских версий Excel
     
     users.forEach(user => {
-      const row = [
-        user.id || '',
-        `"${(user.name || '').replace(/"/g, '""')}"`, // Экранируем кавычки
-        user.email || '',
-        user.role || 'пользователь',
-        user.created_at || ''
-      ];
-      csvRows.push(row.join(';'));
+      // Если у пользователя есть лиды, создаем строку для каждого лида
+      if (user.leads && user.leads.length > 0) {
+        user.leads.forEach((lead: any) => {
+          // Парсим комментарии для извлечения данных о ребенке
+          const comments = lead.comments || '';
+          const childInfo = parseChildInfo(comments);
+          
+          const row = [
+            `"${(user.name || '').replace(/"/g, '""')}"`, // Имя пользователя
+            `"${(lead.title || '').replace(/"/g, '""')}"`, // Имя родителя
+            `"${childInfo.childName.replace(/"/g, '""')}"`, // Имя ребенка
+            `"${childInfo.childAge.replace(/"/g, '""')}"`, // Возраст ребенка  
+            `"${childInfo.phone.replace(/"/g, '""')}"` // Телефон
+          ];
+          csvRows.push(row.join(';'));
+        });
+      } else {
+        // Если у пользователя нет лидов, создаем пустую строку
+        const row = [
+          `"${(user.name || '').replace(/"/g, '""')}"`, // Имя пользователя
+          '', // Имя родителя
+          '', // Имя ребенка
+          '', // Возраст ребенка
+          ''  // Телефон
+        ];
+        csvRows.push(row.join(';'));
+      }
     });
     
     return csvRows.join('\r\n'); // Используем Windows line endings для лучшей совместимости
+  };
+
+  const parseChildInfo = (comments: string) => {
+    // Функция для извлечения информации о ребенке из комментариев
+    // Ищем паттерны в тексте для извлечения имени, возраста и телефона
+    let childName = '';
+    let childAge = '';
+    let phone = '';
+    
+    if (comments) {
+      // Ищем имя ребенка (часто в начале комментария)
+      const nameMatch = comments.match(/ребенка?\s*:?\s*([А-Яа-яЁё]+)/i);
+      if (nameMatch) {
+        childName = nameMatch[1];
+      }
+      
+      // Ищем возраст (цифры + лет/года/год)
+      const ageMatch = comments.match(/(\d+)\s*(лет|года?|месяц)/i);
+      if (ageMatch) {
+        childAge = ageMatch[1] + ' ' + ageMatch[2];
+      }
+      
+      // Ищем телефон (различные форматы)
+      const phoneMatch = comments.match(/(\+?[7-8][\s\-\(\)]?\d{3}[\s\-\(\)]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2})/);
+      if (phoneMatch) {
+        phone = phoneMatch[1];
+      }
+      
+      // Если не нашли структурированные данные, используем весь комментарий как информацию о ребенке
+      if (!childName && !childAge && !phone && comments.length > 0) {
+        childName = comments.substring(0, 50) + (comments.length > 50 ? '...' : '');
+      }
+    }
+    
+    return { childName, childAge, phone };
   };
 
   if (!user) {
