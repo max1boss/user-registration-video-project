@@ -170,40 +170,32 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
     setIsUploading(true);
     setUploadProgress(0);
     
-    // Check if this will be a chunked upload (lowered threshold for Android)
+    // All uploads now use standard method with AndroidFetchHelper
     const videoSizeMB = videoBlob.size / (1024 * 1024);
-    const isChunkedUpload = videoSizeMB > 2; // Lowered to 2MB for Android Chrome compatibility
     
-    setUploadStatus(isChunkedUpload ? 
-      `Большой файл (${videoSizeMB.toFixed(1)}MB) - загружаем по частям` : 
-      `Загружаем видео (${videoSizeMB.toFixed(1)}MB)`
-    );
+    setUploadStatus(`Загружаем видео (${videoSizeMB.toFixed(1)}MB) с Android оптимизацией`);
     
     let progressInterval: NodeJS.Timeout | null = null;
     
-    // For standard upload, simulate progress
-    if (!isChunkedUpload) {
-      progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval!);
-            return prev;
-          }
-          return prev + Math.random() * 15;
-        });
-      }, 200);
-    }
+    // Simulate progress for all uploads
+    progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval!);
+          return prev;
+        }
+        return prev + Math.random() * 10; // Slower progress for large files
+      }, videoSizeMB > 5 ? 500 : 200); // Slower updates for large files
+    });
 
     try {
       await onSaveLead(videoBlob, leadData);
       
-      // Complete progress for standard upload
+      // Complete progress 
       if (progressInterval) {
         clearInterval(progressInterval);
       }
-      if (!isChunkedUpload) {
-        setUploadProgress(100);
-      }
+      setUploadProgress(100);
       
       // Success will be handled by upload page
       

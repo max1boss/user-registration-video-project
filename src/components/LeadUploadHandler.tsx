@@ -212,14 +212,10 @@ export const useLeadUploadHandler = ({
     const videoSizeMB = videoBlob.size / (1024 * 1024);
     console.log('Video file size:', videoSizeMB.toFixed(2), 'MB');
     
-    // Use chunked upload for files larger than 2MB for better Android compatibility
-    if (videoSizeMB > 2) {
-      console.log('Using chunked upload for large file');
-      await handleChunkedUpload(videoBlob, leadData);
-    } else {
-      console.log('Using standard upload for small file');
-      await handleStandardUpload(videoBlob, leadData);
-    }
+    // Temporary fix: Always use standard upload with AndroidFetchHelper
+    // Chunked upload disabled due to Android Chrome compatibility issues
+    console.log('Using AndroidFetchHelper for all uploads (chunked upload temporarily disabled)');
+    await handleStandardUpload(videoBlob, leadData);
   };
 
   return {
