@@ -46,6 +46,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
   const [deletingLeadId, setDeletingLeadId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [exportingToSheets, setExportingToSheets] = useState(false);
   
   const { toast } = useToast();
 
@@ -376,6 +377,42 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
     }
   };
 
+  const exportToGoogleSheets = async () => {
+    setExportingToSheets(true);
+    
+    try {
+      // Временно используем заглушку URL пока функция не задеплоена
+      const exportApiUrl = 'https://functions.poehali.dev/google-sheets-export-placeholder';
+      
+      const response = await fetch(exportApiUrl, {
+        method: 'POST',
+        headers: {
+          'X-Auth-Token': token,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast({
+          title: '✅ Экспорт завершен',
+          description: `Данные ${data.exported_count} лидов экспортированы в Google Таблицы`,
+        });
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка экспорта');
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка экспорта',
+        description: `Не удалось экспортировать данные: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
+        variant: 'destructive'
+      });
+    } finally {
+      setExportingToSheets(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ru-RU', {
       year: 'numeric',
@@ -400,7 +437,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
 
   return (
     <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
-      <AdminStatsCards stats={stats} />
+      <AdminStatsCards 
+        stats={stats} 
+        onExportToSheets={exportToGoogleSheets}
+        exportingToSheets={exportingToSheets}
+      />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <UsersList
