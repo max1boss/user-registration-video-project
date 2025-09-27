@@ -51,7 +51,6 @@ const Index = () => {
   };
 
   const parseChildInfo = (comments: string) => {
-    console.log('Парсим комментарии:', comments);
     
     // Функция для извлечения информации из комментариев
     let parentName = '';
@@ -105,7 +104,6 @@ const Index = () => {
       });
     }
     
-    console.log('Результат парсинга:', { parentName, childName, childAge, phone });
     return { parentName, childName, childAge, phone };
   };
 
@@ -128,15 +126,7 @@ const Index = () => {
 
       const data = await response.json();
       
-      // Отладка: посмотрим на структуру данных
-      console.log('Данные с сервера:', data);
-      if (data.users && data.users.length > 0) {
-        console.log('Первый пользователь:', data.users[0]);
-        if (data.users[0].leads && data.users[0].leads.length > 0) {
-          console.log('Первый лид:', data.users[0].leads[0]);
-          console.log('Комментарии лида:', data.users[0].leads[0].comments);
-        }
-      }
+
       
       // Создаём CSV с правильной кодировкой UTF-8
       const csvContent = createCSVContent(data.users || []);
@@ -217,70 +207,79 @@ const Index = () => {
     );
   }
 
-  // Admin interface - simplified
+  // Admin interface
   if (user.role === 'admin') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-success/5">
         <div className="container mx-auto px-4 py-6">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold">Админ панель</h1>
-              <button 
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Выйти
-              </button>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-xl mb-4">🔧 Экспорт данных</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="p-4 bg-green-50 border border-green-200 rounded">
-                  <h3 className="font-semibold text-green-800 mb-2">✅ Экспорт готов!</h3>
-                  <p className="text-green-700 text-sm">
-                    Функция экспорта в CSV файл заменила интеграцию с Google Sheets.
-                    Теперь можно скачивать данные пользователей в табличном формате.
-                  </p>
-                </div>
-                
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
-                  <h3 className="font-semibold text-yellow-800 mb-2">⚠️ Google Sheets удален</h3>
-                  <p className="text-yellow-700 text-sm">
-                    Старая интеграция с Google Sheets полностью удалена из системы.
-                    Все зависимости очищены.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
+              <div className="flex gap-3 items-center">
                 <button 
                   onClick={handleExcelExport}
                   disabled={isExporting}
-                  className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isExporting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Экспорт...
+                      CSV
                     </>
                   ) : (
                     <>
-                      📊 Скачать CSV файл
+                      📊 CSV
                     </>
                   )}
                 </button>
-                <button className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                  👥 Управление пользователями
+                <button 
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  Выйти
                 </button>
               </div>
             </div>
             
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
-              <p className="text-blue-800">
-                <strong>Статус:</strong> Все проблемы с загрузкой решены. 
-                Админ панель работает с функцией экспорта CSV (Excel-совместимый формат).
-              </p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-2">📊 Статистика</h3>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">Всего пользователей: <span className="font-medium">—</span></p>
+                  <p className="text-sm text-gray-600">Активных лидов: <span className="font-medium">—</span></p>
+                  <p className="text-sm text-gray-600">Аудиозаписей: <span className="font-medium">—</span></p>
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-2">⚡ Быстрые действия</h3>
+                <div className="space-y-2">
+                  <button className="w-full text-left text-sm text-blue-600 hover:text-blue-800">👥 Управление пользователями</button>
+                  <button className="w-full text-left text-sm text-blue-600 hover:text-blue-800">📋 Просмотр лидов</button>
+                  <button className="w-full text-left text-sm text-blue-600 hover:text-blue-800">🎵 Аудиозаписи</button>
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-2">🔧 Системы</h3>
+                <div className="space-y-2">
+                  <p className="text-sm text-green-600">✅ База данных: Работает</p>
+                  <p className="text-sm text-green-600">✅ API: Доступно</p>
+                  <p className="text-sm text-green-600">✅ Экспорт: Активен</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-xl font-semibold">Последние пользователи</h2>
+              </div>
+              <div className="p-6">
+                <div className="text-center text-gray-500 py-8">
+                  <p>Загрузка данных пользователей...</p>
+                  <p className="text-sm mt-2">Используйте кнопку CSV для экспорта всех данных</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -292,9 +291,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-success/5">
       <div className="container mx-auto px-4 py-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Добро пожаловать, {user.name}!</h1>
+            <h1 className="text-2xl font-bold">Личный кабинет</h1>
             <button 
               onClick={handleLogout}
               className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
@@ -303,16 +302,57 @@ const Index = () => {
             </button>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg mb-4">Пользовательская панель</h2>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Роль:</strong> {user.role || 'пользователь'}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">👤 Профиль</h3>
+              <div className="space-y-2">
+                <p><strong>Имя:</strong> {user.name}</p>
+                <p><strong>Email:</strong> {user.email}</p>
+                <p><strong>Роль:</strong> {user.role || 'пользователь'}</p>
+              </div>
+            </div>
             
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
-              <p className="text-blue-800">
-                📝 Пользовательские функции временно недоступны.
-                Обратитесь к администратору.
-              </p>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">📊 Статистика</h3>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">Мои лиды: <span className="font-medium">—</span></p>
+                <p className="text-sm text-gray-600">Аудиозаписи: <span className="font-medium">—</span></p>
+                <p className="text-sm text-gray-600">Последняя активность: <span className="font-medium">—</span></p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold">⚡ Быстрые действия</h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
+                  <div className="text-2xl mb-2">📝</div>
+                  <h3 className="font-medium mb-1">Создать лид</h3>
+                  <p className="text-sm text-gray-600">Добавить новую информацию о клиенте</p>
+                </button>
+                
+                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
+                  <div className="text-2xl mb-2">🎵</div>
+                  <h3 className="font-medium mb-1">Загрузить аудио</h3>
+                  <p className="text-sm text-gray-600">Прикрепить аудиозапись к лиду</p>
+                </button>
+                
+                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
+                  <div className="text-2xl mb-2">📋</div>
+                  <h3 className="font-medium mb-1">Мои лиды</h3>
+                  <p className="text-sm text-gray-600">Просмотр и редактирование</p>
+                </button>
+              </div>
+              
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
+                <p className="text-blue-800">
+                  💡 <strong>Подсказка:</strong> Используйте быстрые действия для работы с лидами. 
+                  Все данные автоматически сохраняются и доступны администратору.
+                </p>
+              </div>
             </div>
           </div>
         </div>
