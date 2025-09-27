@@ -103,23 +103,23 @@ const Index = () => {
   };
 
   const createCSVContent = (users: any[]) => {
-    const headers = ['Имя пользователя', 'Имя родителя', 'Имя ребенка', 'Возраст ребенка', 'Телефон'];
+    const headers = ['Имя пользователя', 'Родитель', 'Ребенок', 'Возраст', 'Телефон'];
     const csvRows = [headers.join(';')]; // Используем ; как разделитель для русских версий Excel
     
     users.forEach(user => {
       // Если у пользователя есть лиды, создаем строку для каждого лида
       if (user.leads && user.leads.length > 0) {
         user.leads.forEach((lead: any) => {
-          // Парсим комментарии для извлечения данных о ребенке
+          // Парсим комментарии для извлечения данных лида
           const comments = lead.comments || '';
-          const childInfo = parseChildInfo(comments);
+          const leadInfo = parseChildInfo(comments);
           
           const row = [
-            `"${(user.name || '').replace(/"/g, '""')}"`, // Имя пользователя
-            `"${(lead.title || '').replace(/"/g, '""')}"`, // Имя родителя
-            `"${childInfo.childName.replace(/"/g, '""')}"`, // Имя ребенка
-            `"${childInfo.childAge.replace(/"/g, '""')}"`, // Возраст ребенка  
-            `"${childInfo.phone.replace(/"/g, '""')}"` // Телефон
+            `"${(user.name || '').replace(/"/g, '""')}"`, // Столбец A: Имя пользователя
+            `"${leadInfo.parentName.replace(/"/g, '""')}"`, // Столбец B: Родитель из комментариев
+            `"${leadInfo.childName.replace(/"/g, '""')}"`, // Столбец C: Ребенок из комментариев
+            `"${leadInfo.childAge.replace(/"/g, '""')}"`, // Столбец D: Возраст из комментариев  
+            `"${leadInfo.phone.replace(/"/g, '""')}"` // Столбец E: Телефон из комментариев
           ];
           csvRows.push(row.join(';'));
         });
@@ -140,38 +140,39 @@ const Index = () => {
   };
 
   const parseChildInfo = (comments: string) => {
-    // Функция для извлечения информации о ребенке из комментариев
-    // Ищем паттерны в тексте для извлечения имени, возраста и телефона
+    // Функция для извлечения информации из структурированных комментариев лида
+    let parentName = '';
     let childName = '';
     let childAge = '';
     let phone = '';
     
     if (comments) {
-      // Ищем имя ребенка (часто в начале комментария)
-      const nameMatch = comments.match(/ребенка?\s*:?\s*([А-Яа-яЁё]+)/i);
-      if (nameMatch) {
-        childName = nameMatch[1];
+      // Ищем "Родитель: Имя"
+      const parentMatch = comments.match(/Родитель:\s*(.+?)(?:\n|$)/i);
+      if (parentMatch) {
+        parentName = parentMatch[1].trim();
       }
       
-      // Ищем возраст (цифры + лет/года/год)
-      const ageMatch = comments.match(/(\d+)\s*(лет|года?|месяц)/i);
+      // Ищем "Ребенок: Имя"  
+      const childMatch = comments.match(/Ребенок:\s*(.+?)(?:\n|$)/i);
+      if (childMatch) {
+        childName = childMatch[1].trim();
+      }
+      
+      // Ищем "Возраст: число"
+      const ageMatch = comments.match(/Возраст:\s*(.+?)(?:\n|$)/i);
       if (ageMatch) {
-        childAge = ageMatch[1] + ' ' + ageMatch[2];
+        childAge = ageMatch[1].trim();
       }
       
-      // Ищем телефон (различные форматы)
-      const phoneMatch = comments.match(/(\+?[7-8][\s\-\(\)]?\d{3}[\s\-\(\)]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2})/);
+      // Ищем "Телефон: номер"
+      const phoneMatch = comments.match(/Телефон:\s*(.+?)(?:\n|$)/i);
       if (phoneMatch) {
-        phone = phoneMatch[1];
-      }
-      
-      // Если не нашли структурированные данные, используем весь комментарий как информацию о ребенке
-      if (!childName && !childAge && !phone && comments.length > 0) {
-        childName = comments.substring(0, 50) + (comments.length > 50 ? '...' : '');
+        phone = phoneMatch[1].trim();
       }
     }
     
-    return { childName, childAge, phone };
+    return { parentName, childName, childAge, phone };
   };
 
   if (!user) {
