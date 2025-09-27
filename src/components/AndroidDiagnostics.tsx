@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
-import { useToast } from '@/hooks/use-toast';
+
 
 interface AndroidDiagnosticsProps {
   onClose: () => void;
@@ -18,7 +18,7 @@ interface DiagnosticResult {
 const AndroidDiagnostics: React.FC<AndroidDiagnosticsProps> = ({ onClose }) => {
   const [results, setResults] = useState<DiagnosticResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
-  const { toast } = useToast();
+
 
   const runDiagnostics = async () => {
     setIsRunning(true);
@@ -148,23 +148,7 @@ const AndroidDiagnostics: React.FC<AndroidDiagnosticsProps> = ({ onClose }) => {
     const errorCount = newResults.filter(r => r.status === 'error').length;
     const warningCount = newResults.filter(r => r.status === 'warning').length;
     
-    if (errorCount > 0) {
-      toast({
-        title: 'Обнаружены проблемы',
-        description: `${errorCount} критических ошибок, ${warningCount} предупреждений`,
-        variant: 'destructive'
-      });
-    } else if (warningCount > 0) {
-      toast({
-        title: 'Android Chrome особенности',
-        description: `${warningCount} предупреждений - это нормально для Android`,
-      });
-    } else {
-      toast({
-        title: 'Все тесты пройдены',
-        description: 'Устройство полностью совместимо',
-      });
-    }
+
   };
 
   useEffect(() => {

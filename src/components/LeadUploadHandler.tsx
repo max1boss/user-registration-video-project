@@ -1,5 +1,4 @@
 import React from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { ChunkedUploader } from '@/utils/chunkedUpload';
 import { LeadFormData } from '@/types/lead';
 
@@ -19,7 +18,7 @@ export const useLeadUploadHandler = ({
   onProgress, 
   onLoadLeads 
 }: LeadUploadHandlerProps) => {
-  const { toast } = useToast();
+
 
   const handleChunkedUpload = async (audioBlob: Blob, leadData: LeadFormData): Promise<void> => {
     const comments = `Родитель: ${leadData.parentName}, Ребенок: ${leadData.childName}, Возраст: ${leadData.age}, Телефон: ${leadData.phone}`;
@@ -51,11 +50,6 @@ export const useLeadUploadHandler = ({
         console.error('Chunked upload error:', error);
         onProgress(undefined);
         
-        toast({ 
-          title: 'Ошибка загрузки большого файла', 
-          description: error, 
-          variant: 'destructive' 
-        });
         throw new Error(error);
       }
     });
@@ -86,11 +80,6 @@ export const useLeadUploadHandler = ({
         
         if (!base64Audio || base64Audio.length === 0) {
           console.error('Base64 conversion failed - empty result');
-          toast({ 
-            title: 'Ошибка кодирования аудио', 
-            description: 'Не удалось преобразовать аудио в base64', 
-            variant: 'destructive' 
-          });
           throw new Error('Base64 conversion failed');
         }
         
@@ -109,12 +98,7 @@ export const useLeadUploadHandler = ({
         
         // Warn if approaching limits (audio files are typically much smaller)
         if (audioSizeMB > 8) {
-          console.warn('Audio size approaching Cloud Function limits!');
-          toast({ 
-            title: '⚠️ Большой размер аудио', 
-            description: `Размер: ${audioSizeMB.toFixed(1)}MB. Это может вызвать проблемы с загрузкой.`, 
-            variant: 'destructive' 
-          });
+          console.warn('Audio size approaching Cloud Function limits:', audioSizeMB.toFixed(1), 'MB');
         }
         
         const requestBody = {
@@ -162,22 +146,12 @@ export const useLeadUploadHandler = ({
           // Reload leads
           await onLoadLeads(token);
         } else {
-          toast({ 
-            title: 'Ошибка сохранения', 
-            description: data.error || 'Не удалось сохранить лид', 
-            variant: 'destructive' 
-          });
           throw new Error(data.error || 'Не удалось сохранить лид');
         }
       };
       
       reader.onerror = (error) => {
         console.error('FileReader error:', error);
-        toast({ 
-          title: 'Ошибка чтения файла', 
-          description: 'Не удалось прочитать аудио файл', 
-          variant: 'destructive' 
-        });
         throw new Error('FileReader error');
       };
       
@@ -201,11 +175,6 @@ export const useLeadUploadHandler = ({
         errorMessage = error.message;
       }
       
-      toast({ 
-        title: 'Ошибка', 
-        description: errorMessage, 
-        variant: 'destructive' 
-      });
       throw new Error(errorMessage);
     }
   };

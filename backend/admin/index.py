@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Admin panel API for viewing all user data and videos
+    Business: Admin panel API for viewing all user data and videos (v2)
     Args: event with httpMethod, headers with X-Auth-Token
     Returns: All users data with their videos and comments
     '''
@@ -86,8 +86,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 vl.comments as lead_comments,
                 vl.created_at as lead_created_at,
                 vl.video_filename
-            FROM users u
-            LEFT JOIN video_leads vl ON u.id = vl.user_id
+            FROM t_p72874800_user_registration_vi.users u
+            LEFT JOIN t_p72874800_user_registration_vi.video_leads vl ON u.id = vl.user_id
             ORDER BY u.created_at DESC, vl.created_at DESC
         """)
         
@@ -125,13 +125,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         users_list = list(users_data.values())
         
         # Get total statistics
-        cursor.execute("SELECT COUNT(*) FROM users")
+        cursor.execute("SELECT COUNT(*) FROM t_p72874800_user_registration_vi.users")
         total_users = cursor.fetchone()[0]
         
-        cursor.execute("SELECT COUNT(*) FROM video_leads")
+        cursor.execute("SELECT COUNT(*) FROM t_p72874800_user_registration_vi.video_leads")
         total_leads = cursor.fetchone()[0]
         
-        cursor.execute("SELECT COUNT(*) FROM video_leads WHERE video_filename IS NOT NULL")
+        cursor.execute("SELECT COUNT(*) FROM t_p72874800_user_registration_vi.video_leads WHERE video_filename IS NOT NULL")
         total_audios = cursor.fetchone()[0]
         
         return {

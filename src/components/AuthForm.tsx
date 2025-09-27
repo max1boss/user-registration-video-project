@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
-import { useToast } from '@/hooks/use-toast';
+
 
 interface User {
   id: string;
@@ -24,7 +24,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess, apiUrl }) => {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { toast } = useToast();
+
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,25 +51,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess, apiUrl }) => {
         localStorage.setItem('auth_token', data.token);
         localStorage.setItem('user_data', JSON.stringify(data.user));
         
-        toast({ 
-          title: isLogin ? 'Добро пожаловать!' : 'Регистрация успешна!',
-          description: isLogin ? 'Вы успешно вошли в систему' : 'Добро пожаловать на платформу'
-        });
+
         
         onAuthSuccess(data.user, data.token);
       } else {
-        toast({ 
-          title: 'Ошибка', 
-          description: data.error || 'Неизвестная ошибка', 
-          variant: 'destructive' 
-        });
+
       }
     } catch (error) {
-      toast({ 
-        title: 'Ошибка подключения', 
-        description: 'Не удалось связаться с сервером', 
-        variant: 'destructive' 
-      });
+
     } finally {
       setLoading(false);
     }

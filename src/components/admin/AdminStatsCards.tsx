@@ -13,13 +13,15 @@ interface AdminStatsCardsProps {
   onExportToExcel?: () => void;
   exportingToExcel?: boolean;
   onExportToCSV?: () => void;
+  onUsersCardClick?: () => void;
 }
 
 const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ 
   stats, 
   onExportToExcel, 
   exportingToExcel, 
-  onExportToCSV 
+  onExportToCSV,
+  onUsersCardClick
 }) => {
   return (
     <div className="space-y-6">
@@ -64,9 +66,12 @@ const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Users Card */}
-        <div className="relative group">
+        <div 
+          className={`relative group ${onUsersCardClick ? 'cursor-pointer' : ''}`}
+          onClick={onUsersCardClick}
+        >
           <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-300"></div>
-          <Card className="relative bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+          <Card className={`relative bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300 ${onUsersCardClick ? 'hover:scale-105 transform' : ''}`}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -79,7 +84,11 @@ const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({
                   </div>
                 </div>
                 <div className="text-blue-500">
-                  <Icon name="TrendingUp" size={20} />
+                  {onUsersCardClick ? (
+                    <Icon name="ChevronRight" size={20} />
+                  ) : (
+                    <Icon name="TrendingUp" size={20} />
+                  )}
                 </div>
               </div>
             </CardContent>
