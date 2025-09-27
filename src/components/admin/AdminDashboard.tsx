@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import { useToast } from '@/hooks/use-toast';
 import StatisticsCards from '../StatisticsCards';
 import UsersList from '../UsersList';
 import EditUserModal from './EditUserModal';
@@ -37,7 +37,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [showUserDetail, setShowUserDetail] = useState(false);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
-
+  const { toast } = useToast();
 
   const loadUsers = async () => {
     if (!token) return;
@@ -60,6 +60,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setUsers(data.users || []);
       setStatistics(data.statistics || { total_users: 0, total_leads: 0, total_audios: 0 });
     } catch (error: any) {
+      toast({ 
+        title: 'Ошибка загрузки', 
+        description: error.message,
+        variant: 'destructive'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +82,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     try {
       // Здесь будет запрос на удаление пользователя
+      toast({ 
+        title: 'Функция в разработке', 
+        description: 'Удаление пользователей будет доступно позже',
+        variant: 'default'
+      });
     } catch (error: any) {
+      toast({ 
+        title: 'Ошибка удаления', 
+        description: error.message,
+        variant: 'destructive'
+      });
     }
   };
 
@@ -88,9 +103,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setShowEditModal(false);
       setEditingUser(null);
       
-
+      toast({ 
+        title: 'Пользователь обновлен', 
+        description: 'Изменения сохранены успешно',
+        variant: 'default'
+      });
     } catch (error: any) {
-
+      toast({ 
+        title: 'Ошибка сохранения', 
+        description: error.message,
+        variant: 'destructive'
+      });
     }
   };
 
@@ -142,10 +165,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       link.click();
       document.body.removeChild(link);
       
-
+      toast({ 
+        title: 'Экспорт завершён', 
+        description: 'CSV файл скачан с правильной кодировкой UTF-8!',
+        variant: 'default'
+      });
       
     } catch (error: any) {
-
+      toast({ 
+        title: 'Ошибка экспорта', 
+        description: error.message || 'Не удалось выполнить экспорт',
+        variant: 'destructive'
+      });
     } finally {
       setIsExporting(false);
     }

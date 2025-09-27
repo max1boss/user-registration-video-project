@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
+import { useToast } from '@/hooks/use-toast';
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -12,6 +13,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, leadTitle, classNam
   const [isSupported, setIsSupported] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { toast } = useToast();
 
   // Detect mobile device and browser
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -50,6 +52,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, leadTitle, classNam
     if (isIOS) {
       if (isWebMVideo) {
         setIsSupported(false);
+        toast({
+          title: '🚫 Устаревший формат',
+          description: 'WebM больше не поддерживается. Все новые записи создаются в MP4.',
+          variant: 'destructive'
+        });
         return;
       }
       // MP4 должен работать на всех iOS отлично
@@ -65,6 +72,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, leadTitle, classNam
     if (isSafari && !isMobile) {
       if (isWebMVideo) {
         setIsSupported(false);
+        toast({
+          title: '🚫 Формат не поддерживается',
+          description: 'WebM формат заблокирован. Система теперь записывает только в MP4.',
+          variant: 'destructive'
+        });
         return;
       }
     }
@@ -96,7 +108,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, leadTitle, classNam
       // Clean up blob URL
       URL.revokeObjectURL(blobUrl);
       
+      toast({
+        title: 'Скачивание начато',
+        description: `Видео "${leadTitle}" загружается`,
+      });
     } catch (error) {
+      toast({
+        title: 'Ошибка скачивания',
+        description: 'Не удалось скачать видео',
+        variant: 'destructive'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -169,6 +190,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, leadTitle, classNam
           } else if (isSafari) {
             errorMessage = 'Safari не поддерживает WebM. Попробуйте другой браузер или скачайте видео.';
           }
+          
+          toast({
+            title: 'Ошибка воспроизведения',
+            description: errorMessage,
+            variant: 'destructive'
+          });
         }}
       >
         {/* Поддерживаем только MP4 формат */}

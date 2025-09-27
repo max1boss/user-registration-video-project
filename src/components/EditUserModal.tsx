@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface EditUserModalProps {
   editingUser: any | null;
@@ -15,6 +16,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 }) => {
   const [name, setName] = useState(editingUser?.name || '');
   const [email, setEmail] = useState(editingUser?.email || '');
+  const { toast } = useToast();
 
   React.useEffect(() => {
     if (editingUser) {
@@ -25,6 +27,11 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 
   const handleSave = () => {
     if (!name.trim() || !email.trim()) {
+      toast({ 
+        title: 'Ошибка валидации', 
+        description: 'Заполните все поля',
+        variant: 'destructive'
+      });
       return;
     }
 
