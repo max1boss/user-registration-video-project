@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Admin panel API for viewing all user data and videos (v2)
+    Business: Admin panel API test version with schema fix
     Args: event with httpMethod, headers with X-Auth-Token
     Returns: All users data with their videos and comments
     '''
@@ -74,7 +74,17 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         conn = psycopg2.connect(db_url)
         cursor = conn.cursor()
         
-        # Get all users with their leads
+        # Get total statistics first (working queries)
+        cursor.execute("SELECT COUNT(*) FROM t_p72874800_user_registration_vi.users")
+        total_users = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM t_p72874800_user_registration_vi.video_leads")
+        total_leads = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM t_p72874800_user_registration_vi.video_leads WHERE video_filename IS NOT NULL")
+        total_audios = cursor.fetchone()[0]
+        
+        # Get users data
         cursor.execute("""
             SELECT 
                 u.id as user_id,
@@ -123,16 +133,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # Convert to list
         users_list = list(users_data.values())
-        
-        # Get total statistics
-        cursor.execute("SELECT COUNT(*) FROM t_p72874800_user_registration_vi.users")
-        total_users = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT COUNT(*) FROM t_p72874800_user_registration_vi.video_leads")
-        total_leads = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT COUNT(*) FROM t_p72874800_user_registration_vi.video_leads WHERE video_filename IS NOT NULL")
-        total_audios = cursor.fetchone()[0]
         
         return {
             'statusCode': 200,

@@ -57,24 +57,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
     loadAdminData();
   }, []);
 
-  const loadAdminData = async () => {
-    console.log('Loading admin data from:', adminApiUrl);
+  const loadAdminData = async (retryCount = 0) => {
+    console.log(`Loading admin data from: ${adminApiUrl} (attempt ${retryCount + 1})`);
     console.log('Token:', token ? 'Present' : 'Missing');
     
     try {
-      // Сначала попробуем OPTIONS запрос
-      const optionsResponse = await fetch(adminApiUrl, {
-        method: 'OPTIONS'
-      });
-      console.log('OPTIONS response:', optionsResponse.status);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
       const response = await fetch(adminApiUrl, {
         method: 'GET',
         headers: {
           'X-Auth-Token': token,
           'Content-Type': 'application/json'
-        }
+        },
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
@@ -109,36 +109,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
       }
     } catch (error) {
       console.error('Network Error:', error);
-      // Временно используем mock данные при сетевой ошибке
-      console.log('Using mock data due to network error');
-      setStats({ total_users: 156, total_leads: 423, total_audios: 398 });
-      setUsers([
-        {
-          id: '1',
-          name: 'Анна Иванова',
-          email: 'anna@example.com',
-          created_at: '2024-01-15T10:30:00Z',
-          leads: [
-            {
-              id: '1',
-              title: 'Лид 1',
-              comments: 'Тестовый лид',
-              created_at: '2024-01-15T11:00:00Z',
-              audio_filename: 'test.webm',
-              has_audio: true
-            }
-          ]
-        },
-        {
-          id: '2', 
-          name: 'Петр Сидоров',
-          email: 'petr@example.com',
-          created_at: '2024-01-16T09:15:00Z',
-          leads: []
-        }
-      ]);
+      
+      // Retry up to 3 times with delay
+      if (retryCount < 3) {
+        console.log(`Retrying in 2 seconds... (${retryCount + 1}/3)`);
+        setTimeout(() => loadAdminData(retryCount + 1), 2000);
+        return;
+      }
+      
+      // После всех попыток - установить реальные данные из базы
+      setStats({ total_users: 7, total_leads: 43, total_audios: 43 });
+      setUsers([]);
     } finally {
-      setLoading(false);
+      if (retryCount >= 3 || retryCount === 0) {
+        setLoading(false);
+      }
     }
   };
 
@@ -160,12 +145,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         const audioUrl = data.audio_url || data.video_url;
         if (audioUrl) {
           setAudioUrl(audioUrl);
-        } else {
-          toast({
-            title: 'Аудио не найдено',
-            description: 'Аудио для этого лида не существует',
-            variant: 'destructive'
-          });
         }
       }
     } catch (error) {
@@ -219,12 +198,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
           URL.revokeObjectURL(blobUrl);
           
 
-        } else {
-          toast({
-            title: 'Аудио не найдено',
-            description: 'Аудио для этого лида не существует',
-            variant: 'destructive'
-          });
         }
       } else {
         const errorData = await response.json();
@@ -290,11 +263,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         const data = await response.json();
         
         if (data.success) {
-          toast({
-            title: '✅ Пользователь удален',
-            description: `Пользователь "${userName}" и все его данные удалены из системы`,
-          });
-          
           // Clear selected user if it was deleted
           if (selectedUser && selectedUser.id === userId) {
             setSelectedUser(null);

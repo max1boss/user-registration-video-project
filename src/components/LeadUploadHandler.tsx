@@ -50,11 +50,6 @@ export const useLeadUploadHandler = ({
         console.error('Chunked upload error:', error);
         onProgress(undefined);
         
-        toast({ 
-          title: 'Ошибка загрузки большого файла', 
-          description: error, 
-          variant: 'destructive' 
-        });
         throw new Error(error);
       }
     });
@@ -85,11 +80,6 @@ export const useLeadUploadHandler = ({
         
         if (!base64Audio || base64Audio.length === 0) {
           console.error('Base64 conversion failed - empty result');
-          toast({ 
-            title: 'Ошибка кодирования аудио', 
-            description: 'Не удалось преобразовать аудио в base64', 
-            variant: 'destructive' 
-          });
           throw new Error('Base64 conversion failed');
         }
         
@@ -185,7 +175,6 @@ export const useLeadUploadHandler = ({
         errorMessage = error.message;
       }
       
-
       throw new Error(errorMessage);
     }
   };
