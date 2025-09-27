@@ -241,32 +241,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
     }
   };
 
-  const downloadAllUserAudios = async (user: User) => {
-    const audiosToDownload = user.leads.filter(lead => lead.has_audio);
-    
-    if (audiosToDownload.length === 0) {
-      toast({
-        title: 'Нет аудио',
-        description: `У пользователя ${user.name} нет аудиозаписей`,
-        variant: 'destructive'
-      });
-      return;
-    }
 
-    toast({
-      title: 'Скачивание начато',
-      description: `Загружаю ${audiosToDownload.length} аудио от ${user.name}`,
-    });
-
-    for (let i = 0; i < audiosToDownload.length; i++) {
-      const lead = audiosToDownload[i];
-      await downloadAudio(lead.id, lead.title, user.name);
-      
-      if (i < audiosToDownload.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-  };
 
   const deleteUser = async (userId: string, userName: string) => {
     setDeletingUserId(userId);
