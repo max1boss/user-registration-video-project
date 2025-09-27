@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import AuthForm from '@/components/AuthForm';
+import { useExcelExport } from '@/hooks/useExcelExport';
 
 const API_URLS = {
   auth: 'https://functions.poehali.dev/080ec769-925f-4132-8cd3-549c89bdc4c0',
+  admin: 'https://functions.poehali.dev/bf64fc6c-c075-4df6-beb9-f5b527586fa1',
 };
 
 interface User {
@@ -17,6 +19,7 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string>('');
   const { toast } = useToast();
+  const { exportToExcel, isLoading } = useExcelExport();
 
   useEffect(() => {
     const savedToken = localStorage.getItem('auth_token');
@@ -46,6 +49,28 @@ const Index = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
     toast({ title: 'Выход выполнен', description: 'До свидания!' });
+  };
+
+  const handleExcelExport = async () => {
+    try {
+      await exportToExcel({
+        token,
+        adminApiUrl: API_URLS.admin,
+        filename: `users_export_${new Date().toISOString().split('T')[0]}.xlsx`
+      });
+      
+      toast({ 
+        title: 'Экспорт завершён', 
+        description: 'Excel файл скачан успешно!',
+        variant: 'default'
+      });
+    } catch (error: any) {
+      toast({ 
+        title: 'Ошибка экспорта', 
+        description: error.message || 'Не удалось выполнить экспорт',
+        variant: 'destructive'
+      });
+    }
   };
 
   if (!user) {
@@ -94,8 +119,21 @@ const Index = () => {
               </div>
               
               <div className="flex gap-4">
-                <button className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                  📊 Скачать Excel файл
+                <button 
+                  onClick={handleExcelExport}
+                  disabled={isLoading}
+                  className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Экспорт...
+                    </>
+                  ) : (
+                    <>
+                      📊 Скачать Excel файл
+                    </>
+                  )}
                 </button>
                 <button className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                   👥 Управление пользователями
