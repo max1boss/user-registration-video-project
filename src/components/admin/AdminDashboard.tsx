@@ -103,17 +103,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setShowEditModal(false);
       setEditingUser(null);
       
-      toast({ 
-        title: 'Пользователь обновлен', 
-        description: 'Изменения сохранены успешно',
-        variant: 'default'
-      });
+
     } catch (error: any) {
-      toast({ 
-        title: 'Ошибка сохранения', 
-        description: error.message,
-        variant: 'destructive'
-      });
+
     }
   };
 
@@ -165,18 +157,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       link.click();
       document.body.removeChild(link);
       
-      toast({ 
-        title: 'Экспорт завершён', 
-        description: 'CSV файл скачан с правильной кодировкой UTF-8!',
-        variant: 'default'
-      });
+
       
     } catch (error: any) {
-      toast({ 
-        title: 'Ошибка экспорта', 
-        description: error.message || 'Не удалось выполнить экспорт',
-        variant: 'destructive'
-      });
+
     } finally {
       setIsExporting(false);
     }

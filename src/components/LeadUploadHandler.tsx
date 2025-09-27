@@ -201,11 +201,7 @@ export const useLeadUploadHandler = ({
         errorMessage = error.message;
       }
       
-      toast({ 
-        title: 'Ошибка', 
-        description: errorMessage, 
-        variant: 'destructive' 
-      });
+
       throw new Error(errorMessage);
     }
   };

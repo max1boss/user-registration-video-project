@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { LeadFormData, VideoLead } from '@/types/lead';
 
 // Components
@@ -44,8 +43,6 @@ const Index = () => {
   const [uploadComplete, setUploadComplete] = useState(false);
   const [isArchiveUnlocked, setIsArchiveUnlocked] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  
-  const { toast } = useToast();
 
   // Load token from localStorage on mount
   useEffect(() => {
@@ -122,11 +119,7 @@ const Index = () => {
       
     } catch (error: any) {
       console.error('Upload error:', error);
-      toast({ 
-        title: 'Ошибка', 
-        description: error.message || 'Не удалось сохранить лид', 
-        variant: 'destructive' 
-      });
+
       setLoading(false);
       setShowUploadPage(false);
     }
@@ -159,8 +152,6 @@ const Index = () => {
     
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
-    
-    toast({ title: 'Выход выполнен', description: 'До свидания!' });
   };
 
   const handleCreateLead = () => {
@@ -180,9 +171,7 @@ const Index = () => {
       setIsArchiveUnlocked(true);
       setShowPasswordDialog(false);
       setActiveTab('archive');
-      toast({ title: 'Доступ разрешен', description: 'Добро пожаловать в архив' });
     } else {
-      toast({ title: 'Неверный пароль', description: 'Попробуйте еще раз', variant: 'destructive' });
       setArchivePassword('');
     }
   };

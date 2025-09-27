@@ -47,40 +47,26 @@ const NativeVideoRecorder: React.FC<NativeVideoRecorderProps> = ({
   useEffect(() => {
     if (error) {
       onError(error);
-      toast({
-        title: 'Ошибка записи',
-        description: error,
-        variant: 'destructive'
-      });
+
     }
   }, [error, onError, toast]);
 
   const handleRecordVideo = async () => {
     try {
-      toast({
-        title: '📹 Запись видео',
-        description: 'Начинаем запись с камеры устройства...'
-      });
+
 
       const videoBlob = await recordVideo();
       
       if (videoBlob) {
         onVideoRecorded(videoBlob);
-        toast({
-          title: '✅ Видео записано!',
-          description: `Размер: ${(videoBlob.size / (1024 * 1024)).toFixed(2)} MB`
-        });
+
       } else {
         throw new Error('Не удалось записать видео');
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Ошибка записи видео';
       onError(errorMessage);
-      toast({
-        title: '❌ Ошибка',
-        description: errorMessage,
-        variant: 'destructive'
-      });
+
     }
   };
 

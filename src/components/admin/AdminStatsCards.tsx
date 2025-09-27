@@ -81,9 +81,6 @@ const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({
                   <div>
                     <p className="text-3xl font-bold text-gray-900">{stats.total_users}</p>
                     <p className="text-sm text-gray-500 font-medium">Пользователей</p>
-                    {onUsersCardClick && (
-                      <p className="text-xs text-blue-600 font-medium mt-1">Нажмите для рейтинга</p>
-                    )}
                   </div>
                 </div>
                 <div className="text-blue-500">

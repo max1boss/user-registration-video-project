@@ -327,10 +327,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         const data = await response.json();
         
         if (data.success) {
-          toast({
-            title: '✅ Имя пользователя изменено',
-            description: `Имя изменено с "${data.user.old_name}" на "${data.user.name}"`,
-          });
+
           
           // Reload admin data to refresh the UI
           await loadAdminData();
@@ -342,11 +339,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         throw new Error(errorData.error || 'Network error');
       }
     } catch (error) {
-      toast({
-        title: 'Ошибка редактирования',
-        description: `Не удалось изменить имя пользователя: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
-        variant: 'destructive'
-      });
+
     } finally {
       setEditingUserId(null);
     }
@@ -356,18 +349,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
     const leadsWithAudio = user.leads.filter(l => l.has_audio || l.audio_filename || l.video_filename);
     
     if (leadsWithAudio.length === 0) {
-      toast({
-        title: 'Нет аудиозаписей',
-        description: 'У этого пользователя нет аудиозаписей для скачивания',
-        variant: 'destructive'
-      });
+
       return;
     }
 
-    toast({
-      title: `Скачивание ${leadsWithAudio.length} аудиозаписей`,
-      description: `Начинаем скачивание всех аудио пользователя ${user.name}`,
-    });
+
 
     for (const lead of leadsWithAudio) {
       try {
@@ -394,9 +380,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
   const handleCSVExport = () => {
     try {
       downloadCSV(users);
-      toast({
-        title: '✅ CSV скачан',
-        description: 'Файл с данными всех лидов успешно скачан',
+
       });
     } catch (error) {
       toast({

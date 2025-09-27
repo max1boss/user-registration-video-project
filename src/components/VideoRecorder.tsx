@@ -99,7 +99,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
         errorMessage = 'Доступ к микрофону запрещен. Разрешите доступ в настройках браузера';
       }
       
-      toast({ title: 'Ошибка', description: errorMessage, variant: 'destructive' });
+
     }
   };
 
