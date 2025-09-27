@@ -43,8 +43,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, leadTitle, classNam
       setIsSupported(true);
     } else {
       setIsSupported(false);
-      console.warn('Audio format not supported')
-      });
+      console.warn('Audio format not supported');
     }
   };
 
