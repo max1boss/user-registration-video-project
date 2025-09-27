@@ -84,3 +84,39 @@ export const formatDuration = (seconds: number) => {
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
+
+export const downloadCSV = (users: any[]) => {
+  const csvContent = createCSVContent(users);
+  
+  // Добавляем BOM (Byte Order Mark) для правильной кодировки UTF-8 в Excel
+  const BOM = '\uFEFF';
+  const fullContent = BOM + csvContent;
+  
+  // Создаем Blob с правильной кодировкой
+  const blob = new Blob([fullContent], { 
+    type: 'text/csv;charset=utf-8;' 
+  });
+  
+  // Создаем ссылку для скачивания
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  
+  // Генерируем имя файла с текущей датой
+  const currentDate = new Date();
+  const dateString = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
+  const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+  const fileName = `leads_data_${dateString}_${timeString}.csv`;
+  
+  link.setAttribute('download', fileName);
+  link.style.visibility = 'hidden';
+  
+  // Добавляем к DOM, кликаем и удаляем
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  // Освобождаем URL
+  URL.revokeObjectURL(url);
+};

@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import AdminStatsCards from './admin/AdminStatsCards';
 import UsersList from './admin/UsersList';
 import UserDetails from './admin/UserDetails';
+import { downloadCSV } from '@/utils/csvExport';
 
 interface Lead {
   id: string;
@@ -387,6 +388,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
     });
   };
 
+  const handleCSVExport = () => {
+    try {
+      downloadCSV(users);
+      toast({
+        title: '✅ CSV скачан',
+        description: 'Файл с данными всех лидов успешно скачан',
+      });
+    } catch (error) {
+      toast({
+        title: 'Ошибка экспорта',
+        description: 'Не удалось создать CSV файл',
+        variant: 'destructive'
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -399,34 +416,68 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
   }
 
   return (
-    <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
-      <AdminStatsCards stats={stats} />
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <UsersList
-          users={users}
-          selectedUser={selectedUser}
-          onSelectUser={setSelectedUser}
-          onDownloadAllUserAudios={downloadAllUserAudios}
-          onDeleteUser={deleteUser}
-          onEditUser={editUser}
-          deletingUserId={deletingUserId}
-          editingUserId={editingUserId}
-          formatDate={formatDate}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/60 sticky top-0 z-40">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                <Icon name="Shield" size={20} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Админ панель</h1>
+                <p className="text-sm text-gray-500">Управление пользователями и лидами</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                <Icon name="Circle" size={8} className="inline-block mr-1 fill-current" />
+                Онлайн
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <AdminStatsCards 
+          stats={stats} 
+          onExportToCSV={handleCSVExport}
         />
         
-        <UserDetails
-          selectedUser={selectedUser}
-          audioUrl={audioUrl}
-          loadingAudio={loadingAudio}
-          deletingLeadId={deletingLeadId}
-          onLoadAudio={loadAudio}
-          onDownloadAudio={downloadAudio}
-          onDeleteLead={deleteLead}
-          onDownloadAllUserAudios={downloadAllUserAudios}
-          onCloseAudio={closeAudio}
-          formatDate={formatDate}
-        />
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+          <div className="xl:col-span-1">
+            <UsersList
+              users={users}
+              selectedUser={selectedUser}
+              onSelectUser={setSelectedUser}
+              onDownloadAllUserAudios={downloadAllUserAudios}
+              onDeleteUser={deleteUser}
+              onEditUser={editUser}
+              deletingUserId={deletingUserId}
+              editingUserId={editingUserId}
+              formatDate={formatDate}
+            />
+          </div>
+          
+          <div className="xl:col-span-2">
+            <UserDetails
+              selectedUser={selectedUser}
+              audioUrl={audioUrl}
+              loadingAudio={loadingAudio}
+              deletingLeadId={deletingLeadId}
+              onLoadAudio={loadAudio}
+              onDownloadAudio={downloadAudio}
+              onDeleteLead={deleteLead}
+              onDownloadAllUserAudios={downloadAllUserAudios}
+              onCloseAudio={closeAudio}
+              formatDate={formatDate}
+              videoApiUrl={videoApiUrl}
+              token={token}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
