@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { LeadFormData, VideoLead } from '@/types/lead';
 
-// Components
-import AuthForm from '@/components/AuthForm';
-import AppHeader from '@/components/AppHeader';
-import AdminPanel from '@/components/AdminPanel';
-import UploadPage from '@/components/UploadPage';
-import TabsNavigation from '@/components/TabsNavigation';
-import ArchivePasswordDialog from '@/components/ArchivePasswordDialog';
-import { useLeadUploadHandler } from '@/components/LeadUploadHandler';
+// Simple test - temporarily removed all complex imports
+const Index = () => {
+  return (
+    <div style={{ padding: '20px', fontSize: '24px' }}>
+      <h1>Тест загрузки сайта</h1>
+      <p>Если вы видите этот текст, React работает!</p>
+      <p>Время: {new Date().toLocaleTimeString()}</p>
+    </div>
+  );
+};
+
+export default Index;
 
 // API URLs
 const API_URLS = {
@@ -33,6 +35,7 @@ interface User {
 
 
 const Index = () => {
+  console.log('Index component rendering...');
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string>('');
   const [videoLeads, setVideoLeads] = useState<VideoLead[]>([]);
