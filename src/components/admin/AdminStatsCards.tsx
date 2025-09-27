@@ -20,23 +20,29 @@ const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ stats, onExportToShee
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Статистика</h2>
         {onExportToSheets && (
-          <button
-            onClick={onExportToSheets}
-            disabled={exportingToSheets}
-            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-          >
-            {exportingToSheets ? (
-              <>
-                <Icon name="Loader2" size={16} className="animate-spin" />
-                Экспортирую...
-              </>
-            ) : (
-              <>
-                <Icon name="FileSpreadsheet" size={16} />
-                Экспорт в Google Таблицы
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-lg">
+              <Icon name="AlertTriangle" size={14} />
+              <span>Настройте GOOGLE_SHEETS_SERVICE_ACCOUNT</span>
+            </div>
+            <button
+              onClick={onExportToSheets}
+              disabled={exportingToSheets}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            >
+              {exportingToSheets ? (
+                <>
+                  <Icon name="Loader2" size={16} className="animate-spin" />
+                  Экспортирую...
+                </>
+              ) : (
+                <>
+                  <Icon name="FileSpreadsheet" size={16} />
+                  Экспорт в Google Таблицы
+                </>
+              )}
+            </button>
+          </div>
         )}
       </div>
       

@@ -40,9 +40,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         service_account_json = os.environ.get('GOOGLE_SHEETS_SERVICE_ACCOUNT')
         if not service_account_json:
             return {
-                'statusCode': 500,
+                'statusCode': 400,
                 'headers': {'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Google Sheets credentials not configured'})
+                'body': json.dumps({
+                    'error': 'Google Sheets credentials not configured',
+                    'details': 'Добавьте секрет GOOGLE_SHEETS_SERVICE_ACCOUNT в настройках проекта',
+                    'setup_required': True
+                })
             }
         
         credentials_info = json.loads(service_account_json)

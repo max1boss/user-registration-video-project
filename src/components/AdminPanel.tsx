@@ -400,9 +400,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         });
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Ошибка экспорта');
+        
+        // Проверяем на отсутствие Google Sheets credentials
+        if (errorData.setup_required || (errorData.error && errorData.error.includes('Google Sheets credentials not configured'))) {
+          toast({
+            title: '⚠️ Требуется настройка Google Sheets',
+            description: errorData.details || 'Добавьте секрет GOOGLE_SHEETS_SERVICE_ACCOUNT в настройках проекта',
+            variant: 'destructive'
+          });
+        } else {
+          throw new Error(errorData.error || 'Ошибка экспорта');
+        }
       }
     } catch (error) {
+      if (error instanceof Error && error.message.includes('Google Sheets credentials not configured')) {
+        // Уже обработано выше
+        return;
+      }
+      
       toast({
         title: 'Ошибка экспорта',
         description: `Не удалось экспортировать данные: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
