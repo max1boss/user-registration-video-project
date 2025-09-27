@@ -1,0 +1,134 @@
+name: 🎯 Manual APK Build (Fixed)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '📋 Версия приложения'
+        required: true
+        default: '1.0.0'
+        type: string
+      build_type:
+        description: '🔧 Тип сборки'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+        - release
+        - debug
+
+jobs:
+  manual-build:
+    name: 🚀 Manual Android Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: ☕ Setup Java 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: 🚀 Setup Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: 📝 Create package.json if missing
+      run: |
+        if [ ! -f "package.json" ]; then
+          cat > package.json << 'EOF'
+        {
+          "name": "user-registration-video",
+          "version": "1.0.0",
+          "private": true,
+          "scripts": {
+            "build": "echo 'Building app...' && mkdir -p dist && echo '<html><head><title>User Registration Video</title></head><body><h1>User Registration Video App</h1></body></html>' > dist/index.html"
+          },
+          "dependencies": {
+            "react": "^18.0.0",
+            "react-dom": "^18.0.0"
+          }
+        }
+        EOF
+        fi
+
+    - name: 🤖 Setup Android SDK
+      uses: android-actions/setup-android@v2
+      with:
+        api-level: '33'
+        build-tools: '33.0.2'
+
+    - name: 📦 Install dependencies
+      run: |
+        npm install
+        npm install -g @capacitor/cli @capacitor/core @capacitor/android
+
+    - name: 🏗️ Build application
+      run: npm run build
+
+    - name: 📱 Setup Capacitor
+      run: |
+        if [ ! -f "capacitor.config.json" ]; then
+          cat > capacitor.config.json << 'EOF'
+        {
+          "appId": "com.userregistration.video",
+          "appName": "User Registration Video",
+          "webDir": "dist",
+          "bundledWebRuntime": false,
+          "plugins": {
+            "SplashScreen": {
+              "launchShowDuration": 3000
+            }
+          }
+        }
+        EOF
+        fi
+        
+        if [ ! -d "android" ]; then
+          npx cap add android
+        fi
+        npx cap sync android
+
+    - name: 🔨 Build Android APK
+      run: |
+        cd android
+        chmod +x gradlew
+        if [ "${{ inputs.build_type }}" == "release" ]; then
+          ./gradlew assembleRelease --no-daemon --stacktrace
+        else
+          ./gradlew assembleDebug --no-daemon --stacktrace
+        fi
+
+    - name: 📂 Prepare APK file
+      id: prepare_apk
+      run: |
+        if [ "${{ inputs.build_type }}" == "release" ]; then
+          APK_PATH=$(find android -name "*release*.apk" -type f | head -1)
+        else
+          APK_PATH=$(find android -name "*debug*.apk" -type f | head -1)
+        fi
+        
+        if [ -z "$APK_PATH" ]; then
+          echo "❌ APK file not found!"
+          find android -name "*.apk" -type f
+          exit 1
+        fi
+        
+        FINAL_NAME="user-registration-video-v${{ inputs.version }}-${{ inputs.build_type }}.apk"
+        cp "$APK_PATH" "$FINAL_NAME"
+        echo "apk_path=$FINAL_NAME" >> $GITHUB_OUTPUT
+        
+        APK_SIZE=$(du -h "$FINAL_NAME" | cut -f1)
+        echo "✅ APK created: $FINAL_NAME ($APK_SIZE)"
+
+    - name: 📤 Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: USER-REGISTRATION-VIDEO-v${{ inputs.version }}-${{ inputs.build_type }}
+        path: ${{ steps.prepare_apk.outputs.apk_path }}
+        retention-days: 90
