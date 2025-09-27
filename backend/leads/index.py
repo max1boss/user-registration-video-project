@@ -134,6 +134,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Invalid video data'})
                 }
             
+            # Verify user exists before inserting
+            cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+            if not cursor.fetchone():
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': f'User ID {user_id} does not exist'})
+                }
+            
             # Save to database
             cursor.execute("""
                 INSERT INTO video_leads 
@@ -214,12 +224,34 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
     
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'isBase64Encoded': False,
-            'body': json.dumps({'error': f'Server error: {str(e)}'})
-        }
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error occurred: {str(e)}")
+        print(f"Full traceback: {error_details}")
+        
+        # More specific error handling
+        error_msg = str(e)
+        if 'foreign key' in error_msg.lower():
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'isBase64Encoded': False,
+                'body': json.dumps({'error': f'Database foreign key error: User does not exist (user_id: {user_id})'})
+            }
+        elif 'duplicate key' in error_msg.lower():
+            return {
+                'statusCode': 409,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'isBase64Encoded': False,
+                'body': json.dumps({'error': 'Duplicate entry detected'})
+            }
+        else:
+            return {
+                'statusCode': 500,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'isBase64Encoded': False,
+                'body': json.dumps({'error': f'Server error: {error_msg}'})
+            }
     
     finally:
         if 'cursor' in locals():
