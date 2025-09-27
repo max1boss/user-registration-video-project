@@ -63,7 +63,29 @@ const UsersRanking: React.FC<UsersRankingProps> = ({ users, onBack, formatDate }
   const averageLeadsPerUser = totalUsers > 0 ? (totalLeads / totalUsers).toFixed(1) : '0';
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onBack}
+            className="bg-white/70 backdrop-blur-sm border-gray-200 hover:bg-white/90"
+          >
+            <Icon name="ArrowLeft" size={16} className="mr-2" />
+            Назад к статистике
+          </Button>
+          <div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              Рейтинг пользователей
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Топ пользователей по количеству созданных лидов
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
