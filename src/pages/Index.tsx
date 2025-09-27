@@ -18,6 +18,11 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string>('');
   const [isExporting, setIsExporting] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [statistics, setStatistics] = useState({ total_users: 0, total_leads: 0, total_audios: 0 });
+  const [isLoading, setIsLoading] = useState(false);
+  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -49,6 +54,91 @@ const Index = () => {
     localStorage.removeItem('user_data');
     toast({ title: 'Выход выполнен', description: 'До свидания!' });
   };
+
+  const loadUsers = async () => {
+    if (!token) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(API_URLS.admin, {
+        method: 'GET',
+        headers: {
+          'X-Auth-Token': token,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка загрузки данных');
+      }
+
+      const data = await response.json();
+      setUsers(data.users || []);
+      setStatistics(data.statistics || { total_users: 0, total_leads: 0, total_audios: 0 });
+    } catch (error: any) {
+      toast({ 
+        title: 'Ошибка загрузки', 
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditUser = (userToEdit: any) => {
+    setEditingUser(userToEdit);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) {
+      return;
+    }
+
+    try {
+      // Здесь будет запрос на удаление пользователя
+      toast({ 
+        title: 'Функция в разработке', 
+        description: 'Удаление пользователей будет доступно позже',
+        variant: 'default'
+      });
+    } catch (error: any) {
+      toast({ 
+        title: 'Ошибка удаления', 
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const saveUserChanges = async (updatedUser: any) => {
+    try {
+      // Здесь будет запрос на обновление пользователя
+      setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
+      setShowEditModal(false);
+      setEditingUser(null);
+      
+      toast({ 
+        title: 'Пользователь обновлен', 
+        description: 'Изменения сохранены успешно',
+        variant: 'default'
+      });
+    } catch (error: any) {
+      toast({ 
+        title: 'Ошибка сохранения', 
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // Загружаем пользователей при входе администратора
+  useEffect(() => {
+    if (user?.role === 'admin' && token) {
+      loadUsers();
+    }
+  }, [user, token]);
 
   const parseChildInfo = (comments: string) => {
     
@@ -198,6 +288,84 @@ const Index = () => {
     return csvRows.join('\r\n'); // Используем Windows line endings для лучшей совместимости
   };
 
+  const EditUserModal = () => {
+    const [name, setName] = useState(editingUser?.name || '');
+    const [email, setEmail] = useState(editingUser?.email || '');
+
+    const handleSave = () => {
+      if (!name.trim() || !email.trim()) {
+        toast({ 
+          title: 'Ошибка валидации', 
+          description: 'Заполните все поля',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      saveUserChanges({
+        ...editingUser,
+        name: name.trim(),
+        email: email.trim()
+      });
+    };
+
+    if (!showEditModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+          <h3 className="text-lg font-semibold mb-4">Редактировать пользователя</h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Имя
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Введите имя"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Введите email"
+              />
+            </div>
+          </div>
+          
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={handleSave}
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
+            >
+              Сохранить
+            </button>
+            <button
+              onClick={() => {
+                setShowEditModal(false);
+                setEditingUser(null);
+              }}
+              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (!user) {
     return (
       <AuthForm 
@@ -247,7 +415,9 @@ const Index = () => {
                 <div className="flex items-center">
                   <div className="text-blue-500 text-2xl mr-4">👥</div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">7</div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {isLoading ? '...' : statistics.total_users}
+                    </div>
                     <div className="text-gray-600">Пользователей</div>
                   </div>
                 </div>
@@ -257,7 +427,9 @@ const Index = () => {
                 <div className="flex items-center">
                   <div className="text-green-500 text-2xl mr-4">📋</div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">40</div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {isLoading ? '...' : statistics.total_leads}
+                    </div>
                     <div className="text-gray-600">Лидов</div>
                   </div>
                 </div>
@@ -267,7 +439,9 @@ const Index = () => {
                 <div className="flex items-center">
                   <div className="text-red-500 text-2xl mr-4">🔊</div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">40</div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {isLoading ? '...' : statistics.total_audios}
+                    </div>
                     <div className="text-gray-600">Аудиозаписей</div>
                   </div>
                 </div>
@@ -276,69 +450,75 @@ const Index = () => {
             
             {/* Список пользователей */}
             <div className="bg-white rounded-xl border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                  👥 Пользователи (7)
+                  👥 Пользователи ({statistics.total_users})
                 </h2>
+                <button 
+                  onClick={loadUsers}
+                  className="text-blue-600 hover:text-blue-800 text-sm"
+                  disabled={isLoading}
+                >
+                  {isLoading ? '🔄 Загрузка...' : '🔄 Обновить'}
+                </button>
               </div>
               <div className="divide-y divide-gray-200">
-                <div className="px-6 py-4 flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">Полина</div>
-                    <div className="text-sm text-gray-500">masterova-ps08@yandex.ru</div>
-                    <div className="text-xs text-gray-400">Регистрация: 27 сентября 2025 г. в 12:17</div>
+                {isLoading ? (
+                  <div className="px-6 py-8 text-center text-gray-500">
+                    <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <p>Загрузка пользователей...</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">0 лидов</span>
-                    <button className="p-2 text-gray-400 hover:text-gray-600">
-                      ✏️
-                    </button>
-                    <button className="p-2 text-red-400 hover:text-red-600">
-                      🗑️
-                    </button>
+                ) : users.length === 0 ? (
+                  <div className="px-6 py-8 text-center text-gray-500">
+                    <p>Пользователи не найдены</p>
                   </div>
-                </div>
+                ) : (
+                  users.slice(0, 5).map((userData) => (
+                    <div key={userData.id} className="px-6 py-4 flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">{userData.name}</div>
+                        <div className="text-sm text-gray-500">{userData.email}</div>
+                        <div className="text-xs text-gray-400">
+                          Регистрация: {userData.created_at ? new Date(userData.created_at).toLocaleString('ru-RU') : 'Неизвестно'}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`px-3 py-1 rounded-full text-sm ${
+                          userData.leads?.length > 0 
+                            ? 'bg-blue-100 text-blue-600' 
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {userData.leads?.length || 0} лидов
+                        </span>
+                        <button 
+                          onClick={() => handleEditUser(userData)}
+                          className="p-2 text-gray-400 hover:text-gray-600"
+                          title="Редактировать"
+                        >
+                          ✏️
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteUser(userData.id)}
+                          className="p-2 text-red-400 hover:text-red-600"
+                          title="Удалить"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
                 
-                <div className="px-6 py-4 flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">Долматова Владислава</div>
-                    <div className="text-sm text-gray-500">vladislava.dolmatova@internet.ru</div>
-                    <div className="text-xs text-gray-400">Регистрация: 27 сентября 2025 г. в 11:20</div>
+                {users.length > 5 && (
+                  <div className="px-6 py-4 text-center text-gray-500">
+                    <p className="text-sm">+ ещё {users.length - 5} пользователей</p>
+                    <p className="text-xs mt-1">Используйте кнопку CSV для экспорта всех данных</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm">9 лидов</span>
-                    <button className="p-2 text-gray-400 hover:text-gray-600">
-                      ✏️
-                    </button>
-                    <button className="p-2 text-red-400 hover:text-red-600">
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="px-6 py-4 flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">Корельский Максим Сергеевич</div>
-                    <div className="text-sm text-gray-500">korelskiy.kinofilm@gmail.com</div>
-                    <div className="text-xs text-gray-400">Регистрация: 27 сентября 2025 г. в 11:19</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">0 лидов</span>
-                    <button className="p-2 text-gray-400 hover:text-gray-600">
-                      ✏️
-                    </button>
-                    <button className="p-2 text-red-400 hover:text-red-600">
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="px-6 py-4 text-center text-gray-500">
-                  <p className="text-sm">+ ещё 4 пользователя</p>
-                  <p className="text-xs mt-1">Используйте кнопку CSV для экспорта всех данных</p>
-                </div>
+                )}
               </div>
             </div>
+            
+            <EditUserModal />
           </div>
         </div>
       </div>
