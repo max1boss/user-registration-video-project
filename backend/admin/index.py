@@ -116,8 +116,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'title': lead_title,
                     'comments': lead_comments,
                     'created_at': lead_created_at.isoformat() if lead_created_at else None,
-                    'video_filename': video_filename,
-                    'has_video': bool(video_filename)
+                    'audio_filename': video_filename,  # Переименовываем для совместимости
+                    'has_audio': bool(video_filename)  # Используем has_audio для фронтенда
                 }
                 users_data[user_id]['leads'].append(lead_data)
         
@@ -132,7 +132,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         total_leads = cursor.fetchone()[0]
         
         cursor.execute("SELECT COUNT(*) FROM video_leads WHERE video_filename IS NOT NULL")
-        total_videos = cursor.fetchone()[0]
+        total_audios = cursor.fetchone()[0]
         
         return {
             'statusCode': 200,
@@ -143,7 +143,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'statistics': {
                     'total_users': total_users,
                     'total_leads': total_leads,
-                    'total_videos': total_videos
+                    'total_audios': total_audios  # Переименовано для совместимости с фронтендом
                 },
                 'users': users_list
             })

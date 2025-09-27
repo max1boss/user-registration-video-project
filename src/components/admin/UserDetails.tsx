@@ -11,7 +11,8 @@ interface Lead {
   comments: string;
   created_at: string;
   audio_filename?: string;
-  has_audio: boolean;
+  video_filename?: string; // Для совместимости с бэкендом
+  has_audio?: boolean;
 }
 
 interface User {
@@ -77,10 +78,10 @@ const UserDetails: React.FC<UserDetailsProps> = ({
                         size="sm"
                         variant="outline"
                         onClick={() => onDownloadAllUserAudios(selectedUser)}
-                        disabled={selectedUser.leads.filter(l => l.has_audio).length === 0}
+                        disabled={selectedUser.leads.filter(l => l.has_audio || l.audio_filename || l.video_filename).length === 0}
                       >
                         <Icon name="Download" size={12} className="mr-1" />
-                        Скачать все аудио ({selectedUser.leads.filter(l => l.has_audio).length})
+                        Скачать все аудио ({selectedUser.leads.filter(l => l.has_audio || l.audio_filename || l.video_filename).length})
                       </Button>
                     </div>
                     

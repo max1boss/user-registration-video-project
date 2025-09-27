@@ -10,7 +10,8 @@ interface Lead {
   comments: string;
   created_at: string;
   audio_filename?: string;
-  has_audio: boolean;
+  video_filename?: string; // Для совместимости с бэкендом
+  has_audio?: boolean;
 }
 
 interface LeadItemProps {
@@ -36,6 +37,9 @@ const LeadItem: React.FC<LeadItemProps> = ({
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
+  // Проверяем наличие аудио по разным полям для совместимости
+  const hasAudio = lead.has_audio || Boolean(lead.audio_filename) || Boolean(lead.video_filename);
+  
   const handleDelete = async () => {
     await onDeleteLead(lead.id, lead.title);
     setIsDialogOpen(false);
@@ -44,9 +48,9 @@ const LeadItem: React.FC<LeadItemProps> = ({
     <div className="p-3 sm:p-4 border rounded-lg">
       <div className="flex justify-between items-start mb-3 gap-2">
         <p className="font-medium text-sm flex-1 min-w-0">{lead.title}</p>
-        <Badge variant={lead.has_audio ? 'default' : 'secondary'} className="flex-shrink-0">
-          <Icon name={lead.has_audio ? 'Volume2' : 'FileText'} size={12} className="mr-1" />
-          {lead.has_audio ? 'Аудио' : 'Текст'}
+        <Badge variant={hasAudio ? 'default' : 'secondary'} className="flex-shrink-0">
+          <Icon name={hasAudio ? 'Volume2' : 'FileText'} size={12} className="mr-1" />
+          {hasAudio ? 'Аудио' : 'Текст'}
         </Badge>
       </div>
       <div className="text-sm text-muted-foreground mb-3">
@@ -59,7 +63,7 @@ const LeadItem: React.FC<LeadItemProps> = ({
           {formatDate(lead.created_at)}
         </p>
         <div className="flex flex-wrap gap-2 order-1 sm:order-2">
-          {lead.has_audio && (
+          {hasAudio && (
             <>
               <Button
                 size="sm"
