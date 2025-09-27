@@ -20,8 +20,8 @@ interface Lead {
   title: string;
   comments: string;
   created_at: string;
-  video_filename?: string;
-  has_video: boolean;
+  audio_filename?: string;
+  has_audio: boolean;
 }
 
 interface User {
@@ -36,7 +36,7 @@ interface UsersListProps {
   users: User[];
   selectedUser: User | null;
   onSelectUser: (user: User) => void;
-  onDownloadAllUserVideos: (user: User) => void;
+  onDownloadAllUserAudios: (user: User) => void;
   onDeleteUser: (userId: string, userName: string) => void;
   onEditUser: (userId: string, currentName: string) => void;
   deletingUserId: string | null;
@@ -48,7 +48,7 @@ const UsersList: React.FC<UsersListProps> = ({
   users,
   selectedUser,
   onSelectUser,
-  onDownloadAllUserVideos,
+  onDownloadAllUserAudios,
   onDeleteUser,
   onEditUser,
   deletingUserId,
@@ -86,17 +86,17 @@ const UsersList: React.FC<UsersListProps> = ({
                     {user.leads.length} лидов
                   </Badge>
                   <div className="flex gap-1">
-                    {user.leads.filter(l => l.has_video).length > 0 && (
+                    {user.leads.filter(l => l.has_audio).length > 0 && (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onDownloadAllUserVideos(user);
+                          onDownloadAllUserAudios(user);
                         }}
                       >
                         <Icon name="Download" size={12} className="mr-1" />
-                        {user.leads.filter(l => l.has_video).length} видео
+                        {user.leads.filter(l => l.has_audio).length} аудио
                       </Button>
                     )}
                     

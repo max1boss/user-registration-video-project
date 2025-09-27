@@ -3,14 +3,15 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import LeadItem from './LeadItem';
+import AudioPlayer from './AudioPlayer';
 
 interface Lead {
   id: string;
   title: string;
   comments: string;
   created_at: string;
-  video_filename?: string;
-  has_video: boolean;
+  audio_filename?: string;
+  has_audio: boolean;
 }
 
 interface User {
@@ -23,27 +24,27 @@ interface User {
 
 interface UserDetailsProps {
   selectedUser: User | null;
-  videoUrl: string;
-  loadingVideo: boolean;
+  audioUrl: string;
+  loadingAudio: boolean;
   deletingLeadId: string | null;
-  onLoadVideo: (leadId: string) => void;
-  onDownloadVideo: (leadId: string, leadTitle: string, userName: string) => void;
+  onLoadAudio: (leadId: string) => void;
+  onDownloadAudio: (leadId: string, leadTitle: string, userName: string) => void;
   onDeleteLead: (leadId: string, leadTitle: string) => void;
-  onDownloadAllUserVideos: (user: User) => void;
-  onCloseVideo: () => void;
+  onDownloadAllUserAudios: (user: User) => void;
+  onCloseAudio: () => void;
   formatDate: (dateString: string) => string;
 }
 
 const UserDetails: React.FC<UserDetailsProps> = ({
   selectedUser,
-  videoUrl,
-  loadingVideo,
+  audioUrl,
+  loadingAudio,
   deletingLeadId,
-  onLoadVideo,
-  onDownloadVideo,
+  onLoadAudio,
+  onDownloadAudio,
   onDeleteLead,
-  onDownloadAllUserVideos,
-  onCloseVideo,
+  onDownloadAllUserAudios,
+  onCloseAudio,
   formatDate
 }) => {
   return (
@@ -75,11 +76,11 @@ const UserDetails: React.FC<UserDetailsProps> = ({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => onDownloadAllUserVideos(selectedUser)}
-                        disabled={selectedUser.leads.filter(l => l.has_video).length === 0}
+                        onClick={() => onDownloadAllUserAudios(selectedUser)}
+                        disabled={selectedUser.leads.filter(l => l.has_audio).length === 0}
                       >
                         <Icon name="Download" size={12} className="mr-1" />
-                        Скачать все видео ({selectedUser.leads.filter(l => l.has_video).length})
+                        Скачать все аудио ({selectedUser.leads.filter(l => l.has_audio).length})
                       </Button>
                     </div>
                     
@@ -88,10 +89,10 @@ const UserDetails: React.FC<UserDetailsProps> = ({
                         key={lead.id}
                         lead={lead}
                         userName={selectedUser.name}
-                        loadingVideo={loadingVideo}
+                        loadingAudio={loadingAudio}
                         deletingLeadId={deletingLeadId}
-                        onLoadVideo={onLoadVideo}
-                        onDownloadVideo={onDownloadVideo}
+                        onLoadAudio={onLoadAudio}
+                        onDownloadAudio={onDownloadAudio}
                         onDeleteLead={onDeleteLead}
                         formatDate={formatDate}
                       />
@@ -105,24 +106,24 @@ const UserDetails: React.FC<UserDetailsProps> = ({
               </div>
             </div>
 
-            {videoUrl && (
+            {audioUrl && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium">Просмотр видео:</h4>
+                  <h4 className="font-medium">Прослушивание аудио:</h4>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={onCloseVideo}
+                    onClick={onCloseAudio}
                     className="w-8 h-8 p-0"
-                    title="Закрыть видео"
+                    title="Закрыть аудио"
                   >
                     <Icon name="X" size={14} />
                   </Button>
                 </div>
-                <video 
-                  src={videoUrl} 
-                  controls 
-                  className="w-full max-h-64 rounded-lg border"
+                <AudioPlayer 
+                  audioUrl={audioUrl} 
+                  leadTitle="Аудио запись" 
+                  className=""
                 />
               </div>
             )}

@@ -21,10 +21,10 @@ export const useLeadUploadHandler = ({
 }: LeadUploadHandlerProps) => {
   const { toast } = useToast();
 
-  const handleChunkedUpload = async (videoBlob: Blob, leadData: LeadFormData): Promise<void> => {
+  const handleChunkedUpload = async (audioBlob: Blob, leadData: LeadFormData): Promise<void> => {
     const comments = `Родитель: ${leadData.parentName}, Ребенок: ${leadData.childName}, Возраст: ${leadData.age}, Телефон: ${leadData.phone}`;
     const uploader = new ChunkedUploader({
-      file: videoBlob,
+      file: audioBlob,
       title: `Лид от ${new Date().toLocaleDateString('ru-RU')}`,
       comments: comments,
       token: token,
@@ -63,9 +63,9 @@ export const useLeadUploadHandler = ({
     await uploader.upload();
   };
 
-  const handleStandardUpload = async (videoBlob: Blob, leadData: LeadFormData): Promise<void> => {
+  const handleStandardUpload = async (audioBlob: Blob, leadData: LeadFormData): Promise<void> => {
     try {
-      // Convert video blob to base64
+      // Convert audio blob to base64
       const reader = new FileReader();
       reader.onloadend = async () => {
         const result = reader.result as string;
@@ -79,16 +79,16 @@ export const useLeadUploadHandler = ({
           throw new Error('Base64 marker not found in result');
         }
         
-        const base64Video = result.substring(base64Index + 7); // Skip "base64," (7 chars)
-        console.log('Video blob type:', videoBlob.type);
-        console.log('Video blob size:', videoBlob.size);
-        console.log('Base64 length after split:', base64Video.length);
+        const base64Audio = result.substring(base64Index + 7); // Skip "base64," (7 chars)
+        console.log('Audio blob type:', audioBlob.type);
+        console.log('Audio blob size:', audioBlob.size);
+        console.log('Base64 length after split:', base64Audio.length);
         
-        if (!base64Video || base64Video.length === 0) {
+        if (!base64Audio || base64Audio.length === 0) {
           console.error('Base64 conversion failed - empty result');
           toast({ 
-            title: 'Ошибка кодирования видео', 
-            description: 'Не удалось преобразовать видео в base64', 
+            title: 'Ошибка кодирования аудио', 
+            description: 'Не удалось преобразовать аудио в base64', 
             variant: 'destructive' 
           });
           throw new Error('Base64 conversion failed');
@@ -99,20 +99,20 @@ export const useLeadUploadHandler = ({
         console.log('Starting POST request to:', apiUrls.leads);
         console.log('Token length:', token.length);
         console.log('Comments:', comments);
-        console.log('Base64 video length:', base64Video.length);
+        console.log('Base64 audio length:', base64Audio.length);
         
         // Check file size limits
-        const videoSizeMB = videoBlob.size / (1024 * 1024);
-        const base64SizeMB = (base64Video.length * 3) / (4 * 1024 * 1024); // base64 is ~33% larger
-        console.log('Video blob size:', videoBlob.size, 'bytes (', videoSizeMB.toFixed(2), 'MB)');
+        const audioSizeMB = audioBlob.size / (1024 * 1024);
+        const base64SizeMB = (base64Audio.length * 3) / (4 * 1024 * 1024); // base64 is ~33% larger
+        console.log('Audio blob size:', audioBlob.size, 'bytes (', audioSizeMB.toFixed(2), 'MB)');
         console.log('Base64 size estimate:', base64SizeMB.toFixed(2), 'MB');
         
-        // Warn if approaching limits
-        if (videoSizeMB > 8) {
-          console.warn('Video size approaching Cloud Function limits!');
+        // Warn if approaching limits (audio files are typically much smaller)
+        if (audioSizeMB > 8) {
+          console.warn('Audio size approaching Cloud Function limits!');
           toast({ 
-            title: '⚠️ Большой размер видео', 
-            description: `Размер: ${videoSizeMB.toFixed(1)}MB. Это может вызвать проблемы с загрузкой.`, 
+            title: '⚠️ Большой размер аудио', 
+            description: `Размер: ${audioSizeMB.toFixed(1)}MB. Это может вызвать проблемы с загрузкой.`, 
             variant: 'destructive' 
           });
         }
@@ -120,9 +120,9 @@ export const useLeadUploadHandler = ({
         const requestBody = {
           title: `Лид от ${new Date().toLocaleDateString('ru-RU')}`,
           comments: comments,
-          video_data: base64Video,
-          video_filename: 'recording.mp4',
-          video_content_type: 'video/mp4'
+          video_data: base64Audio, // Оставляем старое имя для совместимости
+          video_filename: audioBlob.type.includes('mp4') ? 'recording.m4a' : 'recording.webm',
+          video_content_type: audioBlob.type || 'audio/webm'
         };
         
         console.log('Request body keys:', Object.keys(requestBody));
@@ -175,13 +175,13 @@ export const useLeadUploadHandler = ({
         console.error('FileReader error:', error);
         toast({ 
           title: 'Ошибка чтения файла', 
-          description: 'Не удалось прочитать видео файл', 
+          description: 'Не удалось прочитать аудио файл', 
           variant: 'destructive' 
         });
         throw new Error('FileReader error');
       };
       
-      reader.readAsDataURL(videoBlob);
+      reader.readAsDataURL(audioBlob);
     } catch (error: any) {
       console.error('Full error object:', error);
       console.error('Error message:', error.message);
@@ -210,17 +210,17 @@ export const useLeadUploadHandler = ({
     }
   };
 
-  const handleSaveLead = async (videoBlob: Blob, leadData: LeadFormData) => {
-    const videoSizeMB = videoBlob.size / (1024 * 1024);
-    console.log('Video file size:', videoSizeMB.toFixed(2), 'MB');
+  const handleSaveLead = async (audioBlob: Blob, leadData: LeadFormData) => {
+    const audioSizeMB = audioBlob.size / (1024 * 1024);
+    console.log('Audio file size:', audioSizeMB.toFixed(2), 'MB');
     
-    // Use chunked upload for files larger than 8MB
-    if (videoSizeMB > 8) {
+    // Use chunked upload for files larger than 8MB (unlikely for audio)
+    if (audioSizeMB > 8) {
       console.log('Using chunked upload for large file');
-      await handleChunkedUpload(videoBlob, leadData);
+      await handleChunkedUpload(audioBlob, leadData);
     } else {
       console.log('Using standard upload for small file');
-      await handleStandardUpload(videoBlob, leadData);
+      await handleStandardUpload(audioBlob, leadData);
     }
   };
 

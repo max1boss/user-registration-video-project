@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LeadFormData } from '@/types/lead';
 
 interface VideoRecorderProps {
-  onSaveLead: (videoBlob: Blob, leadData: LeadFormData) => Promise<void>;
+  onSaveLead: (audioBlob: Blob, leadData: LeadFormData) => Promise<void>;
   loading: boolean;
   externalUploadProgress?: number;
 }
@@ -21,8 +21,8 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
     age: '',
     phone: ''
   });
-  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string>('');
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string>('');
   const [isRecording, setIsRecording] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   
@@ -30,57 +30,37 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
   const currentProgress = externalUploadProgress ?? uploadProgress;
   const [isUploading, setIsUploading] = useState(false);
   
-  const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const { toast } = useToast();
 
-  const startVideoRecording = async () => {
+  const startAudioRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 320, max: 320 },
-          height: { ideal: 240, max: 240 },
-          frameRate: { ideal: 15, max: 15 }
-        },
         audio: {
-          sampleRate: 22050,
-          channelCount: 1
+          sampleRate: 44100,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true
         }
       });
       
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
 
-      // Принудительно проверяем поддержку MP4 и используем только его
+      // Настройки записи аудио
       const options: MediaRecorderOptions = {
-        videoBitsPerSecond: 300000,
-        audioBitsPerSecond: 32000
+        audioBitsPerSecond: 64000
       };
       
-      // Проверяем поддержку H.264/MP4 кодека
-      if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.424028, mp4a.40.2"')) {
-        options.mimeType = 'video/mp4; codecs="avc1.424028, mp4a.40.2"';
-      } else if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')) {
-        options.mimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
-      } else if (MediaRecorder.isTypeSupported('video/mp4; codecs=h264')) {
-        options.mimeType = 'video/mp4; codecs=h264';
-      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
-        options.mimeType = 'video/mp4';
-      } else if (MediaRecorder.isTypeSupported('video/webm')) {
-        // Временный fallback для тестирования
-        options.mimeType = 'video/webm';
-        toast({ 
-          title: '⚠️ Устаревший формат', 
-          description: 'Браузер не поддерживает MP4. Использую WebM временно.', 
-          variant: 'destructive' 
-        });
+      // Проверяем поддержку аудио форматов
+      if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        options.mimeType = 'audio/mp4';
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        options.mimeType = 'audio/webm';
+      } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+        options.mimeType = 'audio/ogg';
       } else {
-        // Если ничего не поддерживается, показываем ошибку
-        throw new Error('Браузер не поддерживает запись видео');
+        throw new Error('Браузер не поддерживает запись аудио');
       }
       
       const mediaRecorder = new MediaRecorder(stream, options);
@@ -88,22 +68,21 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
       
       const chunks: BlobPart[] = [];
       mediaRecorder.ondataavailable = (event) => {
-        console.log('Data available:', event.data.size, 'bytes');
+        console.log('Audio data available:', event.data.size, 'bytes');
         if (event.data.size > 0) {
           chunks.push(event.data);
         }
       };
 
       mediaRecorder.onstop = () => {
-        console.log('Recording stopped, chunks:', chunks.length);
+        console.log('Audio recording stopped, chunks:', chunks.length);
         console.log('Total chunks size:', chunks.reduce((sum, chunk) => sum + chunk.size, 0));
-        // Создаем blob с правильным MIME-типом MP4 (используем mediaRecorder.mimeType)
-        const actualMimeType = mediaRecorder.mimeType || 'video/mp4';
+        const actualMimeType = mediaRecorder.mimeType || 'audio/webm';
         const blob = new Blob(chunks, { type: actualMimeType });
-        console.log('Final blob size:', blob.size, 'type:', blob.type);
-        setVideoBlob(blob);
+        console.log('Final audio blob size:', blob.size, 'type:', blob.type);
+        setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
-        setVideoUrl(url);
+        setAudioUrl(url);
         
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(track => track.stop());
@@ -114,41 +93,36 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
       setIsRecording(true);
       console.log('MediaRecorder started with mimeType:', mediaRecorder.mimeType);
     } catch (error: any) {
-      let errorMessage = 'Не удалось получить доступ к камере';
+      let errorMessage = 'Не удалось получить доступ к микрофону';
       
-      if (error.message && error.message.includes('MP4')) {
-        errorMessage = 'Ваш браузер не поддерживает запись в формате MP4. Попробуйте использовать Chrome или Safari';
+      if (error.name === 'NotAllowedError') {
+        errorMessage = 'Доступ к микрофону запрещен. Разрешите доступ в настройках браузера';
       }
       
       toast({ title: 'Ошибка', description: errorMessage, variant: 'destructive' });
     }
   };
 
-  const stopVideoRecording = () => {
+  const stopAudioRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
   };
 
-  const retakeVideo = () => {
-    if (videoUrl) {
-      URL.revokeObjectURL(videoUrl);
+  const retakeAudio = () => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
     }
     
-    // Stop any active camera streams
+    // Stop any active audio streams
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
     
-    // Clear video element source
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    
-    setVideoBlob(null);
-    setVideoUrl('');
+    setAudioBlob(null);
+    setAudioUrl('');
     setIsRecording(false);
   };
 
@@ -160,16 +134,16 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
   };
 
   const handleSaveLead = async () => {
-    if (!videoBlob || !isFormValid()) {
+    if (!audioBlob || !isFormValid()) {
       return;
     }
 
     setIsUploading(true);
     setUploadProgress(0);
     
-    // Check if this will be a chunked upload
-    const videoSizeMB = videoBlob.size / (1024 * 1024);
-    const isChunkedUpload = videoSizeMB > 8;
+    // Audio files are typically smaller, but still check
+    const audioSizeMB = audioBlob.size / (1024 * 1024);
+    const isChunkedUpload = audioSizeMB > 8;
     
     let progressInterval: NodeJS.Timeout | null = null;
     
@@ -187,7 +161,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
     }
 
     try {
-      await onSaveLead(videoBlob, leadData);
+      await onSaveLead(audioBlob, leadData);
       
       // Complete progress for standard upload
       if (progressInterval) {
@@ -208,7 +182,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
           age: '',
           phone: ''
         });
-        retakeVideo();
+        retakeAudio();
       }, 500);
       
     } catch (error) {
@@ -293,7 +267,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
               <div className="flex justify-between text-sm">
                 <span>
                   {currentProgress > 0 && currentProgress < 100 ? 
-                    (externalUploadProgress !== undefined ? 'Загрузка большого файла...' : 'Загрузка видео...') : 
+                    (externalUploadProgress !== undefined ? 'Загрузка большого файла...' : 'Загрузка аудио...') : 
                     'Подготовка к загрузке...'
                   }
                 </span>
@@ -312,7 +286,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
           <Button 
             onClick={handleSaveLead} 
             className="w-full h-12 sm:h-10 text-base sm:text-sm font-medium touch-manipulation"
-            disabled={!videoBlob || !isFormValid() || loading || isUploading}
+            disabled={!audioBlob || !isFormValid() || loading || isUploading}
           >
             {loading || isUploading ? (
               <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
@@ -324,7 +298,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
         </CardContent>
       </Card>
 
-      {/* Video Recording Block - Second on mobile */}
+      {/* Audio Recording Block with Video Cover - Second on mobile */}
       <Card className="animate-scale-in">
         <CardHeader className="pb-3 sm:pb-6">
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
@@ -334,63 +308,65 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onSaveLead, loading, exte
         </CardHeader>
         <CardContent className="space-y-3 sm:space-y-4">
           <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden relative touch-manipulation">
-            {/* Hidden recording video element */}
-            {!videoUrl && (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover opacity-0 absolute inset-0 pointer-events-none"
-              />
-            )}
+            {/* Always show fake video cover */}
+            <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
+              <h1 className="text-black font-bold text-xl sm:text-2xl md:text-4xl select-none px-4 text-center">IMPERIA PROMO</h1>
+            </div>
             
-            {/* Fake cover - visible during recording */}
-            {!videoUrl && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
-                <h1 className="text-black font-bold text-xl sm:text-2xl md:text-4xl select-none px-4 text-center">IMPERIA PROMO</h1>
+            {/* Recording indicator */}
+            {isRecording && (
+              <div className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm">
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                REC
               </div>
             )}
             
-            {/* Playback video when available - replaces cover */}
-            {videoUrl && (
-              <video
-                src={videoUrl}
-                controls
-                className="w-full h-full object-cover"
-              />
+            {/* Audio ready indicator */}
+            {audioUrl && (
+              <div className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-green-500 text-white px-3 py-1 rounded-full text-sm">
+                <Icon name="Check" size={12} />
+                Готово
+              </div>
             )}
             
-            {/* Show placeholder when no video */}
-            {!isRecording && !videoUrl && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-5">
+            {/* Show placeholder when no audio */}
+            {!isRecording && !audioUrl && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 z-5">
                 <div className="text-center px-4">
-                  <Icon name="Camera" size={40} className="mx-auto mb-2 text-gray-400 sm:w-12 sm:h-12" />
+                  <Icon name="Mic" size={40} className="mx-auto mb-2 text-gray-400 sm:w-12 sm:h-12" />
                   <p className="text-gray-500 text-sm sm:text-base">Нажмите "Начать запись"</p>
                 </div>
               </div>
             )}
-            
-
           </div>
 
+          {/* Hidden audio player for playback */}
+          {audioUrl && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <Icon name="Volume2" size={20} className="text-gray-600" />
+                <audio src={audioUrl} controls className="flex-1" />
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
-            {!isRecording && !videoUrl && (
-              <Button onClick={startVideoRecording} className="flex-1 h-12 sm:h-10 text-base sm:text-sm font-medium touch-manipulation">
-                <Icon name="Play" size={16} className="mr-2" />
+            {!isRecording && !audioUrl && (
+              <Button onClick={startAudioRecording} className="flex-1 h-12 sm:h-10 text-base sm:text-sm font-medium touch-manipulation">
+                <Icon name="Mic" size={16} className="mr-2" />
                 Начать запись
               </Button>
             )}
             
             {isRecording && (
-              <Button onClick={stopVideoRecording} variant="destructive" className="flex-1 h-12 sm:h-10 text-base sm:text-sm font-medium touch-manipulation">
+              <Button onClick={stopAudioRecording} variant="destructive" className="flex-1 h-12 sm:h-10 text-base sm:text-sm font-medium touch-manipulation">
                 <Icon name="Square" size={16} className="mr-2" />
                 Остановить
               </Button>
             )}
             
-            {videoUrl && (
-              <Button onClick={retakeVideo} variant="outline" className="flex-1 h-12 sm:h-10 text-base sm:text-sm font-medium touch-manipulation">
+            {audioUrl && (
+              <Button onClick={retakeAudio} variant="outline" className="flex-1 h-12 sm:h-10 text-base sm:text-sm font-medium touch-manipulation">
                 <Icon name="RefreshCw" size={16} className="mr-2" />
                 Пересъемка
               </Button>

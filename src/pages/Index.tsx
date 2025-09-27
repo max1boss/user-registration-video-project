@@ -108,13 +108,13 @@ const Index = () => {
     onLoadLeads: loadUserLeads
   });
 
-  const handleSaveLead = async (videoBlob: Blob, leadData: LeadFormData) => {
+  const handleSaveLead = async (audioBlob: Blob, leadData: LeadFormData) => {
     setShowUploadPage(true);
     setUploadComplete(false);
     setLoading(true);
     
     try {
-      await uploadLead(videoBlob, leadData);
+      await uploadLead(audioBlob, leadData);
       
       // Show success
       setUploadComplete(true);

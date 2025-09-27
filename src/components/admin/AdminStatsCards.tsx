@@ -5,7 +5,7 @@ import Icon from '@/components/ui/icon';
 interface AdminStats {
   total_users: number;
   total_leads: number;
-  total_videos: number;
+  total_audios: number;
 }
 
 interface AdminStatsCardsProps {
@@ -42,10 +42,10 @@ const AdminStatsCards: React.FC<AdminStatsCardsProps> = ({ stats }) => {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center">
-            <Icon name="Video" size={24} className="text-red-500 mr-3" />
+            <Icon name="Volume2" size={24} className="text-red-500 mr-3" />
             <div>
-              <p className="text-2xl font-bold">{stats.total_videos}</p>
-              <p className="text-sm text-muted-foreground">Видеозаписей</p>
+              <p className="text-2xl font-bold">{stats.total_audios}</p>
+              <p className="text-sm text-muted-foreground">Аудиозаписей</p>
             </div>
           </div>
         </CardContent>

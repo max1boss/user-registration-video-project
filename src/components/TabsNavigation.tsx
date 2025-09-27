@@ -8,9 +8,9 @@ interface VideoLead {
   id: string;
   title: string;
   comments: string;
-  video_url?: string;
+  audio_url?: string;
   created_at: string;
-  video_filename?: string;
+  audio_filename?: string;
 }
 
 interface TabsNavigationProps {
@@ -20,7 +20,7 @@ interface TabsNavigationProps {
   isArchiveUnlocked: boolean;
   loading: boolean;
   externalUploadProgress?: number;
-  onSaveLead: (videoBlob: Blob, comments: string) => Promise<void>;
+  onSaveLead: (audioBlob: Blob, comments: string) => Promise<void>;
   onCreateLead: () => void;
   onLoadVideo: (leadId: string) => Promise<string | null>;
   onArchiveTabClick: () => void;
@@ -42,7 +42,7 @@ const TabsNavigation: React.FC<TabsNavigationProps> = ({
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 h-12 sm:h-10">
         <TabsTrigger value="record" className="flex items-center gap-2 text-sm sm:text-base font-medium">
-          <Icon name="Video" size={14} className="sm:w-4 sm:h-4" />
+          <Icon name="Mic" size={14} className="sm:w-4 sm:h-4" />
           <span className="hidden xs:inline">Запись лида</span>
           <span className="xs:hidden">Запись</span>
         </TabsTrigger>

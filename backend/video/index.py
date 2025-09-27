@@ -16,9 +16,9 @@ def verify_token(token: str) -> Optional[Dict[str, Any]]:
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Serve video files from database with authentication (admin can access any video)
+    Business: Serve audio files from database with authentication (admin can access any audio)
     Args: event with httpMethod, query params (id), headers (X-Auth-Token)
-    Returns: Video file data as base64 or error
+    Returns: Audio file data as base64 or error
     '''
     method: str = event.get('httpMethod', 'GET')
     
@@ -85,18 +85,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         conn = psycopg2.connect(db_url)
         cursor = conn.cursor()
         
-        # Get video data (admin can access any video, users only their own)
+        # Get audio data (admin can access any audio, users only their own)
         user_role = user_data.get('role', 'user')
         
         if user_role == 'admin':
-            # Admin can access any video
+            # Admin can access any audio
             cursor.execute("""
                 SELECT video_data, video_content_type, video_filename
                 FROM video_leads 
                 WHERE id = %s
             """, (lead_id,))
         else:
-            # Regular user can only access their own videos
+            # Regular user can only access their own audio
             cursor.execute("""
                 SELECT video_data, video_content_type, video_filename
                 FROM video_leads 
@@ -109,29 +109,29 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'statusCode': 404,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                 'isBase64Encoded': False,
-                'body': json.dumps({'error': 'Video not found or access denied'})
+                'body': json.dumps({'error': 'Audio not found or access denied'})
             }
         
-        video_data, content_type, filename = result
+        audio_data, content_type, filename = result
         
-        if not video_data:
+        if not audio_data:
             return {
                 'statusCode': 404,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                 'isBase64Encoded': False,
-                'body': json.dumps({'error': 'No video data found'})
+                'body': json.dumps({'error': 'No audio data found'})
             }
         
-        # Return video as base64 data URL
-        video_base64 = base64.b64encode(video_data).decode('utf-8')
-        data_url = f"data:{content_type};base64,{video_base64}"
+        # Return audio as base64 data URL
+        audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+        data_url = f"data:{content_type};base64,{audio_base64}"
         
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
             'isBase64Encoded': False,
             'body': json.dumps({
-                'video_url': data_url,
+                'audio_url': data_url,
                 'filename': filename,
                 'content_type': content_type
             })

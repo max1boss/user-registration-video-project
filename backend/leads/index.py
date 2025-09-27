@@ -17,8 +17,8 @@ def verify_token(token: str) -> Optional[Dict[str, Any]]:
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Manage video leads (create, retrieve) with user authentication
-    Args: event with httpMethod, headers (X-Auth-Token), body with video/comments data
+    Business: Manage audio leads (create, retrieve) with user authentication
+    Args: event with httpMethod, headers (X-Auth-Token), body with audio/comments data
     Returns: Lead data or list of user leads
     '''
     print(f"Handler called with method: {event.get('httpMethod', 'UNKNOWN')}")
@@ -91,10 +91,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'id': lead_id,
                     'title': title,
                     'comments': comments,
-                    'video_filename': filename,
-                    'video_content_type': content_type,
+                    'audio_filename': filename,
+                    'audio_content_type': content_type,
                     'created_at': created_at.strftime('%d.%m.%Y %H:%M') if created_at else '',
-                    'video_url': f'/backend/leads/video/{lead_id}'  # URL to get video data
+                    'audio_url': f'/backend/leads/audio/{lead_id}'  # URL to get audio data
                 })
             
             return {
@@ -111,11 +111,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             print(f"Parsed body data keys: {list(body_data.keys())}")
             title = body_data.get('title', '').strip()
             comments = body_data.get('comments', '').strip()
-            video_base64 = body_data.get('video_data', '')  # Base64 encoded video
-            video_filename = body_data.get('video_filename', 'recording.mp4')
-            video_content_type = body_data.get('video_content_type', 'video/mp4')
+            audio_base64 = body_data.get('video_data', '')  # Base64 encoded audio (keeping old name for compatibility)
+            audio_filename = body_data.get('video_filename', 'recording.webm')  # Default to audio format
+            audio_content_type = body_data.get('video_content_type', 'audio/webm')  # Default to audio format
             
-            if not title or not comments or not video_base64:
+            if not title or not comments or not audio_base64:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
@@ -123,15 +123,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Missing required fields'})
                 }
             
-            # Decode base64 video data
+            # Decode base64 audio data
             try:
-                video_data = base64.b64decode(video_base64)
+                audio_data = base64.b64decode(audio_base64)
             except Exception as e:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                     'isBase64Encoded': False,
-                    'body': json.dumps({'error': 'Invalid video data'})
+                    'body': json.dumps({'error': 'Invalid audio data'})
                 }
             
             # Save to database
@@ -140,7 +140,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 (user_id, title, comments, video_data, video_filename, video_content_type)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id, created_at
-            """, (user_id, title, comments, video_data, video_filename, video_content_type))
+            """, (user_id, title, comments, audio_data, audio_filename, audio_content_type))
             
             lead_id, created_at = cursor.fetchone()
             conn.commit()

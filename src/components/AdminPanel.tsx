@@ -10,8 +10,8 @@ interface Lead {
   title: string;
   comments: string;
   created_at: string;
-  video_filename?: string;
-  has_video: boolean;
+  audio_filename?: string;
+  has_audio: boolean;
 }
 
 interface User {
@@ -25,7 +25,7 @@ interface User {
 interface AdminStats {
   total_users: number;
   total_leads: number;
-  total_videos: number;
+  total_audios: number;
 }
 
 interface AdminPanelProps {
@@ -38,11 +38,11 @@ interface AdminPanelProps {
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl, deleteUserApiUrl, editUserApiUrl }) => {
   const [users, setUsers] = useState<User[]>([]);
-  const [stats, setStats] = useState<AdminStats>({ total_users: 0, total_leads: 0, total_videos: 0 });
+  const [stats, setStats] = useState<AdminStats>({ total_users: 0, total_leads: 0, total_audios: 0 });
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string>('');
-  const [loadingVideo, setLoadingVideo] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string>('');
+  const [loadingAudio, setLoadingAudio] = useState(false);
   const [deletingLeadId, setDeletingLeadId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -67,7 +67,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         const data = await response.json();
         const newUsers = data.users || [];
         setUsers(newUsers);
-        setStats(data.statistics || { total_users: 0, total_leads: 0, total_videos: 0 });
+        setStats(data.statistics || { total_users: 0, total_leads: 0, total_audios: 0 });
         
         // Update selected user with fresh data if one was selected
         if (selectedUser) {
@@ -92,9 +92,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
     }
   };
 
-  const loadVideo = async (leadId: string) => {
-    setLoadingVideo(true);
-    setVideoUrl('');
+  const loadAudio = async (leadId: string) => {
+    setLoadingAudio(true);
+    setAudioUrl('');
     
     try {
       const response = await fetch(`${videoApiUrl}?id=${leadId}`, {
@@ -106,32 +106,32 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
 
       if (response.ok) {
         const data = await response.json();
-        if (data.video_url) {
-          setVideoUrl(data.video_url);
+        if (data.audio_url) {
+          setAudioUrl(data.audio_url);
         } else {
           toast({
-            title: 'Видео не найдено',
-            description: 'Видео для этого лида не существует',
+            title: 'Аудио не найдено',
+            description: 'Аудио для этого лида не существует',
             variant: 'destructive'
           });
         }
       }
     } catch (error) {
       toast({
-        title: 'Ошибка загрузки видео',
-        description: 'Не удалось загрузить видео',
+        title: 'Ошибка загрузки аудио',
+        description: 'Не удалось загрузить аудио',
         variant: 'destructive'
       });
     } finally {
-      setLoadingVideo(false);
+      setLoadingAudio(false);
     }
   };
 
-  const closeVideo = () => {
-    setVideoUrl('');
+  const closeAudio = () => {
+    setAudioUrl('');
   };
 
-  const downloadVideo = async (leadId: string, leadTitle: string, userName: string) => {
+  const downloadAudio = async (leadId: string, leadTitle: string, userName: string) => {
     try {
       const response = await fetch(`${videoApiUrl}?id=${leadId}`, {
         method: 'GET',
@@ -142,8 +142,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
 
       if (response.ok) {
         const data = await response.json();
-        if (data.video_url) {
-          const dataUrl = data.video_url;
+        if (data.audio_url) {
+          const dataUrl = data.audio_url;
           const response = await fetch(dataUrl);
           const blob = await response.blob();
           
@@ -153,7 +153,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
           
           const cleanUserName = userName.replace(/[^a-zA-Z0-9]/g, '_');
           const cleanTitle = leadTitle.replace(/[^a-zA-Z0-9]/g, '_');
-          link.download = `${cleanUserName}_${cleanTitle}_${leadId}.mp4`;
+          
+          // Определяем расширение по типу контента
+          let extension = '.webm'; // default
+          if (data.content_type) {
+            if (data.content_type.includes('mp4')) extension = '.m4a';
+            else if (data.content_type.includes('ogg')) extension = '.ogg';
+          }
+          
+          link.download = `${cleanUserName}_${cleanTitle}_${leadId}${extension}`;
           
           document.body.appendChild(link);
           link.click();
@@ -163,12 +171,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
           
           toast({
             title: 'Скачивание начато',
-            description: `Видео "${leadTitle}" от ${userName} загружается`,
+            description: `Аудио "${leadTitle}" от ${userName} загружается`,
           });
         } else {
           toast({
-            title: 'Видео не найдено',
-            description: 'Видео для этого лида не существует',
+            title: 'Аудио не найдено',
+            description: 'Аудио для этого лида не существует',
             variant: 'destructive'
           });
         }
@@ -176,14 +184,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         const errorData = await response.json();
         toast({
           title: 'Ошибка доступа',
-          description: errorData.error || 'Не удалось получить видео',
+          description: errorData.error || 'Не удалось получить аудио',
           variant: 'destructive'
         });
       }
     } catch (error) {
       toast({
         title: 'Ошибка скачивания',
-        description: 'Не удалось скачать видео',
+        description: 'Не удалось скачать аудио',
         variant: 'destructive'
       });
     }
@@ -230,13 +238,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
     }
   };
 
-  const downloadAllUserVideos = async (user: User) => {
-    const videosToDownload = user.leads.filter(lead => lead.has_video);
+  const downloadAllUserAudios = async (user: User) => {
+    const audiosToDownload = user.leads.filter(lead => lead.has_audio);
     
-    if (videosToDownload.length === 0) {
+    if (audiosToDownload.length === 0) {
       toast({
-        title: 'Нет видео',
-        description: `У пользователя ${user.name} нет видеозаписей`,
+        title: 'Нет аудио',
+        description: `У пользователя ${user.name} нет аудиозаписей`,
         variant: 'destructive'
       });
       return;
@@ -244,14 +252,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
 
     toast({
       title: 'Скачивание начато',
-      description: `Загружаю ${videosToDownload.length} видео от ${user.name}`,
+      description: `Загружаю ${audiosToDownload.length} аудио от ${user.name}`,
     });
 
-    for (let i = 0; i < videosToDownload.length; i++) {
-      const lead = videosToDownload[i];
-      await downloadVideo(lead.id, lead.title, user.name);
+    for (let i = 0; i < audiosToDownload.length; i++) {
+      const lead = audiosToDownload[i];
+      await downloadAudio(lead.id, lead.title, user.name);
       
-      if (i < videosToDownload.length - 1) {
+      if (i < audiosToDownload.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
@@ -397,14 +405,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ token, adminApiUrl, videoApiUrl
         
         <UserDetails
           selectedUser={selectedUser}
-          videoUrl={videoUrl}
-          loadingVideo={loadingVideo}
+          audioUrl={audioUrl}
+          loadingAudio={loadingAudio}
           deletingLeadId={deletingLeadId}
-          onLoadVideo={loadVideo}
-          onDownloadVideo={downloadVideo}
+          onLoadAudio={loadAudio}
+          onDownloadAudio={downloadAudio}
           onDeleteLead={deleteLead}
-          onDownloadAllUserVideos={downloadAllUserVideos}
-          onCloseVideo={closeVideo}
+          onDownloadAllUserAudios={downloadAllUserAudios}
+          onCloseAudio={closeAudio}
           formatDate={formatDate}
         />
       </div>
