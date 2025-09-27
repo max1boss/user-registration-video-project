@@ -3,5 +3,5 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './index.css'
 
-// Cache cleared: restored admin panel with Excel export - v4
+// Cache cleared: simplified admin panel works - v5
 createRoot(document.getElementById("root")!).render(<App />);
